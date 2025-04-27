@@ -135,38 +135,28 @@ public class AFN {
         StringBuilder sb = new StringBuilder();
     
         sb.append("--- AFN ---\n");
-        sb.append("Estados: ").append(states.keySet()).append("\n");
-        sb.append("Estado de inicio: ").append(startState).append("\n");
-        sb.append("Estados de aceptación: ").append(acceptingStates).append("\n");
+        sb.append("Estados: ").append(this.states.keySet()).append("\n");
+        sb.append("Estado de inicio: ").append(this.startState).append("\n");
+        sb.append("Estados de aceptación: ").append(this.acceptingStates).append("\n");
         sb.append("Transiciones:\n");
 
-        // Recorremos cada estado y sus transiciones
-        for (State state : states.values()) {
-            // Transiciones normales (con símbolo)
-            for (Map.Entry<Character, Set<Integer>> entry : state.getTransitions().entrySet()) {
-                char symbol = entry.getKey();
-                for (Integer destId : entry.getValue()) {
-                    sb.append("Estado ").append(state.getId())
-                    .append(" --")
-                    .append(symbol)
-                    .append("--> Estado ")
-                    .append(destId)
-                    .append("\n");
-                }
+        // Transiciones normales (con símbolo)
+        for (Map.Entry<Integer, State> entry : this.states.entrySet()) {
+            int stateId = entry.getKey();
+            State state = entry.getValue();
+            for (Map.Entry<Character, Set<Integer>> transitionEntry : state.getTransitions().entrySet()) {
+                char symbol = transitionEntry.getKey();
+                Set<Integer> nextStates = transitionEntry.getValue();
+                sb.append("  Estado ").append(stateId).append(" -- '").append(symbol).append("' --> ").append(nextStates).append("\n");
             }
-        
-        // Transiciones epsilon (sin símbolo)
-        for (Integer destId : state.getEpsilonTransitions()) {
-            sb.append("Estado ").append(state.getId())
-              .append(" --ε--> Estado ")
-              .append(destId)
-              .append("\n");
+            
+            if (!state.getEpsilonTransitions().isEmpty()) {
+                sb.append("  Estado ").append(stateId).append(" -- ε --> ").append(state.getEpsilonTransitions()).append("\n");
+            }
         }
-    }
+        sb.append("--- Fin AFN ---\n");
 
-    sb.append("--- Fin AFN ---\n");
-
-    return sb.toString();
+        return sb.toString();
 }
     
     //Método para convertir el formato hasheado del objeto afn a una cadena legible

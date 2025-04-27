@@ -181,4 +181,31 @@ public class AFD {
         }
         System.out.println("--- Fin AFD ---");
     }
+    
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+    
+        sb.append("--- AFD ---\n");
+        sb.append("Estados: ").append(this.states).append("\n");
+        sb.append("Estado de inicio: ").append(this.startState).append("\n");
+        sb.append("Estados de aceptación: ").append(this.acceptingStates).append("\n");
+        sb.append("Tipos de token de aceptación: ").append(this.acceptingTokenTypes).append("\n");
+        sb.append("Transiciones:\n");
+
+        // Transiciones normales (con símbolo)
+        for (int fromState : this.states) {
+            Map<Character, Integer> stateTransitions = this.transitions.get(fromState);
+            if (stateTransitions != null) {
+                for (Map.Entry<Character, Integer> entry : stateTransitions.entrySet()) {
+                    char symbol = entry.getKey();
+                    int toState = entry.getValue();
+                    sb.append("  Estado ").append(fromState).append(" -- '").append(symbol).append("' --> ").append(toState).append("\n");
+                }
+            }
+        }
+        sb.append("--- Fin AFD ---\n");
+
+        return sb.toString();
+}
 }

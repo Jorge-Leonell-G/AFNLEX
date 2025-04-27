@@ -57,6 +57,7 @@ public class menu extends JFrame {
         JButton btnOptional = new JButton("Hacer AFN Opcional");
         JButton btnERtoAFN = new JButton("Convertir Expresión Regular a AFN");
         JButton btnDeleteAFN = new JButton("Eliminar AFN");
+        JButton btnAFNtoAFD = new JButton("Convertir AFN a AFD");
         JButton btnLexicAnalyzer = new JButton("Analizador Léxico");
         JButton btnExit = new JButton("Salir");
 
@@ -68,6 +69,7 @@ public class menu extends JFrame {
         buttonPanel.add(btnOptional);
         buttonPanel.add(btnERtoAFN);
         buttonPanel.add(btnDeleteAFN);
+        buttonPanel.add(btnAFNtoAFD);
         buttonPanel.add(btnLexicAnalyzer);
         buttonPanel.add(btnExit);
 
@@ -114,8 +116,6 @@ public class menu extends JFrame {
                 }
             }
         });
-        
-        
 
         btnConcatenation.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -158,6 +158,8 @@ public class menu extends JFrame {
 
                 AFN afn = afnStorage.get(index);
                 AFN result = ThompsonAlgorithm.constructForKleeneStar(afn);
+                //Actualizacion en almacenamiento
+                afnStorage.set(index, result);
                 afnListModel.set(index, afnListModel.get(index) + "_Kleene");
                 result.printAFN(); //salida en consola de la construccion en cadena de texto del AFN
                 JOptionPane.showMessageDialog(null, "Cerradura de Kleene aplicada.");
@@ -171,6 +173,8 @@ public class menu extends JFrame {
 
                 AFN afn = afnStorage.get(index);
                 AFN result = ThompsonAlgorithm.constructForPositiveClosure(afn);
+                //Actualizacion en almacenamiento
+                afnStorage.set(index, result);
                 afnListModel.set(index, afnListModel.get(index) + "_Positiva");
                 result.printAFN(); //salida en consola de la construccion en cadena de texto del AFN
                 JOptionPane.showMessageDialog(null, "Cerradura positiva aplicada.");
@@ -184,6 +188,8 @@ public class menu extends JFrame {
 
                 AFN afn = afnStorage.get(index);
                 AFN result = ThompsonAlgorithm.constructForOptional(afn);
+                //Actualizacion en almacenamiento
+                afnStorage.set(index, result);
                 afnListModel.set(index, afnListModel.get(index) + "_Opcional");
                 result.printAFN(); //salida en consola de la construccion en cadena de texto del AFN
                 JOptionPane.showMessageDialog(null, "AFN opcional creado.");
@@ -231,6 +237,20 @@ public class menu extends JFrame {
                 }
             }
         });
+        
+        btnAFNtoAFD.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                int index = selectAFN("Seleccione un AFN para convertirlo a AFD:");
+                if (index == -1) return;
+                AFN selectedAFN = afnStorage.get(index);
+                AFD afd = SubsetConstruction.AFNtoAFD(selectedAFN);
+                afd.printAFD(); //salida en consola de la construccion en cadena de texto del AFN (ER to AFN)
+                JOptionPane.showMessageDialog(null, afd.toString(), "AFD Generado", JOptionPane.INFORMATION_MESSAGE);
+                //afdStorage.add(afd);
+            }
+        });
+
+
 
         btnLexicAnalyzer.addActionListener(new ActionListener() { // <<<<<<
             public void actionPerformed(ActionEvent e) {
