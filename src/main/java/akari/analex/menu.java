@@ -91,6 +91,7 @@ public class menu extends JFrame {
                     AFN afn = new AFN();
                     afn = ThompsonAlgorithm.constructForSymbol(afn, symbol.charAt(0), tokenType);
                     addAFN(afn, "AFN_" + symbol + (afnCounter++));
+                    afn.printAFN(); //salida en consola de la construccion en cadena de texto del AFN
                     //Guardado del archivo
                     //AFNFile.guardarAFN(afn, symbol, directoryPath);
                     //guardarAFNEnArchivo(afn, symbol);
@@ -128,6 +129,7 @@ public class menu extends JFrame {
 
                 AFN result = ThompsonAlgorithm.constructForConcatenation(afn1, afn2);
                 addAFN(result, "Concat_" + (afnCounter++));
+                result.printAFN(); //salida en consola de la construccion en cadena de texto del AFN
                 JOptionPane.showMessageDialog(null, "AFNs concatenados correctamente.");
             }
         });
@@ -144,6 +146,7 @@ public class menu extends JFrame {
 
                 AFN result = ThompsonAlgorithm.constructForUnion(afn1, afn2);
                 addAFN(result, "Union_" + (afnCounter++));
+                result.printAFN(); //salida en consola de la construccion en cadena de texto del AFN
                 JOptionPane.showMessageDialog(null, "AFNs unidos correctamente.");
             }
         });
@@ -154,8 +157,9 @@ public class menu extends JFrame {
                 if (index == -1) return;
 
                 AFN afn = afnStorage.get(index);
-                ThompsonAlgorithm.constructForKleeneStar(afn);
+                AFN result = ThompsonAlgorithm.constructForKleeneStar(afn);
                 afnListModel.set(index, afnListModel.get(index) + "_Kleene");
+                result.printAFN(); //salida en consola de la construccion en cadena de texto del AFN
                 JOptionPane.showMessageDialog(null, "Cerradura de Kleene aplicada.");
             }
         });
@@ -166,8 +170,9 @@ public class menu extends JFrame {
                 if (index == -1) return;
 
                 AFN afn = afnStorage.get(index);
-                ThompsonAlgorithm.constructForPositiveClosure(afn);
+                AFN result = ThompsonAlgorithm.constructForPositiveClosure(afn);
                 afnListModel.set(index, afnListModel.get(index) + "_Positiva");
+                result.printAFN(); //salida en consola de la construccion en cadena de texto del AFN
                 JOptionPane.showMessageDialog(null, "Cerradura positiva aplicada.");
             }
         });
@@ -178,8 +183,9 @@ public class menu extends JFrame {
                 if (index == -1) return;
 
                 AFN afn = afnStorage.get(index);
-                ThompsonAlgorithm.constructForOptional(afn);
+                AFN result = ThompsonAlgorithm.constructForOptional(afn);
                 afnListModel.set(index, afnListModel.get(index) + "_Opcional");
+                result.printAFN(); //salida en consola de la construccion en cadena de texto del AFN
                 JOptionPane.showMessageDialog(null, "AFN opcional creado.");
             }
         });
@@ -191,6 +197,7 @@ public class menu extends JFrame {
                 if (regex != null && !regex.isEmpty()) {
                     AFN afn = ThompsonAlgorithm.ERtoAFN(regex, tokenType);
                     addAFN(afn, "ER_" + (afnCounter++));
+                    afn.printAFN(); //salida en consola de la construccion en cadena de texto del AFN (ER to AFN)
                     JOptionPane.showMessageDialog(null, "AFN creado a partir de la expresión regular.");
                 }
             }
