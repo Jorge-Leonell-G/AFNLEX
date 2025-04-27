@@ -4,6 +4,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.regex.*;
 
@@ -244,6 +246,9 @@ public class menu extends JFrame {
                 if (index == -1) return;
                 AFN selectedAFN = afnStorage.get(index);
                 AFD afd = SubsetConstruction.AFNtoAFD(selectedAFN);
+                // Guardado automático del AFD como .txt
+                String fileName = "AFD_generado_" + System.currentTimeMillis() + ".txt";
+                saveAFDToFile(afd, fileName);
                 afd.printAFD(); //salida en consola de la construccion en cadena de texto del AFN (ER to AFN)
                 JOptionPane.showMessageDialog(null, afd.toString(), "AFD Generado", JOptionPane.INFORMATION_MESSAGE);
                 //afdStorage.add(afd);
@@ -268,6 +273,7 @@ public class menu extends JFrame {
     }
     
     //Métodos
+    
     /*
     private void guardarAFNEnArchivo(AFN afn, String symbol) {
         File afnFile = new File(directoryPath + "/" + symbol + ".txt");
@@ -281,6 +287,26 @@ public class menu extends JFrame {
         afnStorage.add(afn);
         afnListModel.addElement(name);
     }
+    
+    private void saveAFDToFile(AFD afd, String fileName) {
+        try {
+            // Creamos la carpeta si no existe
+            File folder = new File("afd_outputs");
+            if (!folder.exists()) {
+                folder.mkdir();
+            }
+            File file = new File(folder, fileName);
+            FileWriter writer = new FileWriter(file);
+            writer.write(afd.toString());
+            writer.close();
+            JOptionPane.showMessageDialog(null, "AFD guardado exitosamente en " + file.getPath(), "Archivo Guardado", JOptionPane.INFORMATION_MESSAGE);
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(null, "Error al guardar el AFD: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            ex.printStackTrace();
+        }
+    }
+
+
     
     // Cargar los AFNs guardados desde el directorio
     
