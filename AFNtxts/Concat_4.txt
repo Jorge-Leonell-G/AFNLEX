@@ -1,0 +1,9 @@
+AFN con 4 estados.
+Estado de inicio: 0
+Estados de aceptación: [3]
+Transiciones:
+Estado 0
+Estado 1
+Estado 2
+Estado 3 (de aceptación)
+

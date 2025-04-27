@@ -1,0 +1,7 @@
+AFN con 2 estados.
+Estado de inicio: 0
+Estados de aceptación: [1]
+Transiciones:
+akari.analex.State@0
+akari.analex.State@1
+
