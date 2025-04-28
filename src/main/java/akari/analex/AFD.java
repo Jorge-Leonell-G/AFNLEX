@@ -4,6 +4,10 @@
  */
 package akari.analex;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -193,7 +197,7 @@ public class AFD {
         sb.append("Tipos de token de aceptación: ").append(this.acceptingTokenTypes).append("\n");
         sb.append("Transiciones:\n");
 
-        // Transiciones normales (con símbolo)
+        // Transiciones
         for (int fromState : this.states) {
             Map<Character, Integer> stateTransitions = this.transitions.get(fromState);
             if (stateTransitions != null) {
@@ -207,5 +211,6 @@ public class AFD {
         sb.append("--- Fin AFD ---\n");
 
         return sb.toString();
-}
+    }
+
 }

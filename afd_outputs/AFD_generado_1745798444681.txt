@@ -1,0 +1,8 @@
+--- AFD ---
+Estados: [-1, 1]
+Estado de inicio: -1
+Estados de aceptación: [1]
+Tipos de token de aceptación: {1=}
+Transiciones:
+  Estado -1 -- 'A' --> 1
+--- Fin AFD ---

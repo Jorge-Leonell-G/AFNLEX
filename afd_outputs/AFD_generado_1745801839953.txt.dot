@@ -1,0 +1,8 @@
+digraph AFD {
+    rankdir=LR;
+    node [shape = circle];
+    1 [shape=doublecircle];
+    start [shape=plaintext,label=""];
+    start -> -1;
+    -1 -> 1 [label="A"];
+}

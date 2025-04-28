@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.regex.*;
 
 /**
@@ -251,6 +252,12 @@ public class menu extends JFrame {
                 saveAFDToFile(afd, fileName);
                 afd.printAFD(); //salida en consola de la construccion en cadena de texto del AFN (ER to AFN)
                 JOptionPane.showMessageDialog(null, afd.toString(), "AFD Generado", JOptionPane.INFORMATION_MESSAGE);
+                
+                //String dotContent = afd.toString();
+                String dotFilePath = "afd_outputs/" + fileName + ".dot";
+                String imgFilePath = "afd_outputs/" + fileName + ".png";
+                exportAFDToDot(afd, dotFilePath);
+                generateImage(dotFilePath, imgFilePath);
                 //afdStorage.add(afd);
             }
         });
@@ -305,8 +312,6 @@ public class menu extends JFrame {
             ex.printStackTrace();
         }
     }
-
-
     
     // Cargar los AFNs guardados desde el directorio
     
@@ -348,7 +353,55 @@ public class menu extends JFrame {
         JOptionPane.showMessageDialog(this, "No se encontró el AFN seleccionado.", "Error", JOptionPane.ERROR_MESSAGE);
     }
 }
+    
+    private void exportAFDToDot(AFD afd, String dotFilePath) {
+    try {
+        FileWriter writer = new FileWriter(dotFilePath);
+        writer.write("digraph AFD {\n");
+        writer.write("    rankdir=LR;\n");
+        writer.write("    node [shape = circle];\n");
 
+        for (int state : afd.getStates()) {
+            if (afd.getAcceptingStates().contains(state)) {
+                writer.write("    " + state + " [shape=doublecircle];\n");
+            }
+        }
+
+        writer.write("    start [shape=plaintext,label=\"\"];\n");
+        writer.write("    start -> " + afd.getStartState() + ";\n");
+
+        //inicio de las transiciones
+        for (int fromState : afd.getStates()) {
+            Map<Character, Integer> stateTransitions = afd.getTransitions(fromState);
+            if(stateTransitions != null){
+                for(Map.Entry<Character, Integer> entry : stateTransitions.entrySet()){
+                    char symbol = entry.getKey();
+                    int toState = entry.getValue();
+                    writer.write("    " + fromState + " -> " + toState + " [label=\"" + (symbol == '\0' ? "ε" : symbol) + "\"];\n");
+                }
+            }
+        }
+
+        writer.write("}");
+        writer.close();
+    } catch (IOException e) {
+        e.printStackTrace();
+        }
+    }
+
+    private void generateImage(String dotFilePath, String outputImagePath) {
+        try {
+            ProcessBuilder pb = new ProcessBuilder(
+                "dot", "-Tpng", dotFilePath, "-o", outputImagePath
+            );
+            pb.redirectErrorStream(true);
+            Process process = pb.start();
+            process.waitFor();
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+    
     private int selectAFN(String message) {
         Object selected = JOptionPane.showInputDialog(
                 this,
