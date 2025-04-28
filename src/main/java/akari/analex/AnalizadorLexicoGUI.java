@@ -28,54 +28,84 @@ import java.util.Set;
     private AnalizadorLexico analizador;
 
     public AnalizadorLexicoGUI() {
-        super("Analizador Léxico con AFD");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(800, 600);
-        setLayout(new BorderLayout());
+    super("Analizador Léxico con AFD");
+    setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    setSize(800, 600);
+    setLayout(new BorderLayout());
 
-        analizador = new AnalizadorLexico();
+    analizador = new AnalizadorLexico();
 
-        // Panel de entrada
-        JPanel inputPanel = new JPanel(new BorderLayout());
-        inputPanel.setBorder(BorderFactory.createTitledBorder("Texto de Entrada"));
-        inputTextArea = new JTextArea();
-        inputPanel.add(new JScrollPane(inputTextArea), BorderLayout.CENTER);
+    // Panel de entrada
+    JPanel inputPanel = new JPanel(new BorderLayout());
+    inputPanel.setBorder(BorderFactory.createTitledBorder("Texto de Entrada"));
+    inputTextArea = new JTextArea();
+    inputPanel.add(new JScrollPane(inputTextArea), BorderLayout.CENTER);
 
-        // Panel de reglas
-        JPanel rulesPanel = new JPanel(new BorderLayout());
-        rulesPanel.setBorder(BorderFactory.createTitledBorder("Reglas Léxicas (tipo=patrón, una por línea)"));
-        rulesTextArea = new JTextArea();
-        rulesPanel.add(new JScrollPane(rulesTextArea), BorderLayout.CENTER);
+    // Panel de reglas
+    JPanel rulesPanel = new JPanel(new BorderLayout());
+    rulesPanel.setBorder(BorderFactory.createTitledBorder("Reglas Léxicas (tipo=patrón, una por línea)"));
+    rulesTextArea = new JTextArea();
 
-        // Botón de análisis
-        analyzeButton = new JButton("Analizar");
-        analyzeButton.addActionListener(this);
+    // 🔵 <<<<<< Agregamos las reglas por defecto aquí
+    rulesTextArea.setText(
+            "PALABRA_CLAVE=if|else\n" +
+            "IDENTIFICADOR=[a-zA-Z][a-zA-Z0-9]*\n" +
+            "NUMERO=[0-9]+\n" +
+            "OPERADOR=\\+|\\-|\\*|/\n" +
+            "ESPACIO=\\s+"
+    );
+    rulesPanel.add(new JScrollPane(rulesTextArea), BorderLayout.CENTER);
 
-        // Panel de salida
-        JPanel outputPanel = new JPanel(new BorderLayout());
-        outputPanel.setBorder(BorderFactory.createTitledBorder("Tokens Encontrados"));
-        outputTextArea = new JTextArea();
-        outputPanel.add(new JScrollPane(outputTextArea), BorderLayout.CENTER);
+    // Botón de análisis
+    analyzeButton = new JButton("Analizar");
+    analyzeButton.addActionListener(this);
 
-        // Tabla del AFD
-        JPanel afdTablePanel = new JPanel(new BorderLayout());
-        afdTablePanel.setBorder(BorderFactory.createTitledBorder("Tabla de Transiciones del AFD"));
-        afdTableModel = new DefaultTableModel();
-        afdTable = new JTable(afdTableModel);
-        afdTablePanel.add(new JScrollPane(afdTable), BorderLayout.CENTER);
+    // Panel de salida
+    JPanel outputPanel = new JPanel(new BorderLayout());
+    outputPanel.setBorder(BorderFactory.createTitledBorder("Tokens Encontrados"));
+    outputTextArea = new JTextArea();
+    outputPanel.add(new JScrollPane(outputTextArea), BorderLayout.CENTER);
 
-        // Panel principal inferior
-        JPanel bottomPanel = new JPanel(new GridLayout(1, 2));
-        bottomPanel.add(outputPanel);
-        bottomPanel.add(afdTablePanel);
+    // Tabla del AFD
+    JPanel afdTablePanel = new JPanel(new BorderLayout());
+    afdTablePanel.setBorder(BorderFactory.createTitledBorder("Tabla de Transiciones del AFD"));
+    afdTableModel = new DefaultTableModel();
+    afdTable = new JTable(afdTableModel);
+    afdTablePanel.add(new JScrollPane(afdTable), BorderLayout.CENTER);
 
-        add(inputPanel, BorderLayout.NORTH);
-        add(rulesPanel, BorderLayout.CENTER);
-        add(analyzeButton, BorderLayout.SOUTH);
-        add(bottomPanel, BorderLayout.SOUTH); // Reemplazado BOTTOM con SOUTH para el botón
+    // Panel principal inferior
+    
+    //JPanel bottomPanel = new JPanel(new GridLayout(1, 2));
+    /*
+    bottomPanel.add(outputPanel);
+    bottomPanel.add(afdTablePanel);
 
-        setVisible(true);
-    }
+    add(inputPanel, BorderLayout.NORTH);
+    add(rulesPanel, BorderLayout.CENTER);
+    add(analyzeButton, BorderLayout.SOUTH);
+    add(bottomPanel, BorderLayout.SOUTH);
+    */
+    
+    // Panel principal inferior
+    JPanel bottomPanel = new JPanel(new GridLayout(1, 2));
+
+    // Agregar los dos subpaneles al bottomPanel
+    bottomPanel.add(outputPanel);
+    bottomPanel.add(afdTablePanel);
+
+    // Crear un nuevo panel para el botón y el bottomPanel
+    JPanel southPanel = new JPanel(new BorderLayout());
+    southPanel.add(analyzeButton, BorderLayout.NORTH);
+    southPanel.add(bottomPanel, BorderLayout.CENTER);
+
+    // Agregar los paneles principales al frame
+    add(inputPanel, BorderLayout.NORTH);
+    add(rulesPanel, BorderLayout.CENTER);
+    add(southPanel, BorderLayout.SOUTH);
+
+    setVisible(true);
+}
+
 
     @Override
     public void actionPerformed(ActionEvent e) {

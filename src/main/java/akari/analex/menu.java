@@ -24,7 +24,7 @@ public class menu extends JFrame {
 
     public menu() {
         setTitle("Menu del programa de compiladores");
-        setSize(600, 500);
+        setSize(900, 500);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
