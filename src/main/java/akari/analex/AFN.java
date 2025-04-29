@@ -21,15 +21,45 @@ import java.util.regex.Pattern;
 public class AFN {
     private Map<Integer, State> states;
     private int startState;
-    Set<Integer> acceptingStates;
+    protected Set<Integer> acceptingStates;
+    private Map<Integer, String> tokenTypes; // Mapa para los tipos de token
     private int nextStateId;
 
     public AFN() {
         this.states = new HashMap<>();
         this.startState = -1;
         this.acceptingStates = new HashSet<>();
+        this.tokenTypes = new HashMap<>();
         this.nextStateId = 0;
     }
+    
+    // Método para obtener el tipo de token asociado a un estado de aceptación
+    public String getTokenType(int acceptingStateId) {
+        return this.tokenTypes.get(acceptingStateId);
+    }
+    
+    // Método para asociar un tipo de token a un estado de aceptación
+    public void setTokenType(int acceptingStateId, String tokenType) {
+        if (this.acceptingStates.contains(acceptingStateId)) {
+            this.tokenTypes.put(acceptingStateId, tokenType);
+        } else {
+            System.out.println("Estado no es de aceptación: " + acceptingStateId);
+        }
+    }
+    
+    public void setAcceptingStatesForUnion(AFN afn1, AFN afn2) {
+    // Unión de los estados de aceptación de afn1
+        for (int acceptingState : afn1.getAcceptingStates()) {
+            this.addAcceptingState(acceptingState);
+            this.setTokenType(acceptingState, afn1.getTokenType(acceptingState));
+        }
+
+        // Unión de los estados de aceptación de afn2
+        for (int acceptingState : afn2.getAcceptingStates()) {
+            this.addAcceptingState(acceptingState);
+            this.setTokenType(acceptingState, afn2.getTokenType(acceptingState));
+        }
+}
 
     public State createState() {
         State newState = new State(nextStateId++);

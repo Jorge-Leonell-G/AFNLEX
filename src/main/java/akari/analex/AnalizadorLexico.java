@@ -270,7 +270,7 @@ public class AnalizadorLexico {
         analizador.agregarReglaLexica("PALABRA_CLAVE", "if|else");
         analizador.agregarReglaLexica("IDENTIFICADOR", "[a-zA-Z][a-zA-Z0-9]*");
         analizador.agregarReglaLexica("NUMERO", "[0-9]+");
-        analizador.agregarReglaLexica("OPERADOR", "\\+|\\-|\\*|/");
+        analizador.agregarReglaLexica("SIMBOLO", "\\+|\\-|\\*|/\\@\\(\\)\\->");
         analizador.agregarReglaLexica("ESPACIO", "\\s+");
 
         analizador.unionAnalizadorLexico(analizador.obtenerReglasLexicas());

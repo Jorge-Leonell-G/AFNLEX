@@ -138,8 +138,7 @@ import java.util.Set;
                     outputTextArea.append(token.toString() + "\n");
                 }
 
-                // Aquí podríamos implementar una animación básica del análisis
-                // mostrando el estado actual del AFD mientras consume la entrada.
+                // animacion basica del analisis para mostrar el estado actual del AFD mientras consume la entrada.
                 animateAnalysis(afd, inputTextArea.getText());
 
             } else {

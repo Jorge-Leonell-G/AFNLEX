@@ -85,12 +85,9 @@ public class menu extends JFrame {
         btnSymbol.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 //expresion regular para validar que el simbolo sea adecuado
-                Pattern symbolPattern = Pattern.compile("^[a-zA-Z]$");
+                //Pattern symbolPattern = Pattern.compile("^[a-zA-Z]$");
                 String symbol = JOptionPane.showInputDialog("Ingrese un símbolo:");
-                if(symbol.length() != 1 || !symbolPattern.matcher(symbol).matches()){
-                    JOptionPane.showMessageDialog(null, "Debe ingresar un solo símbolo alfabético (a-z o A-Z).");
-                    return;
-                }
+                
                 String tokenType = JOptionPane.showInputDialog("Ingrese el tipo de token (opcional):");
                 if (symbol != null && !symbol.isEmpty()) {
                     AFN afn = new AFN();
@@ -148,6 +145,8 @@ public class menu extends JFrame {
                 AFN afn2 = afnStorage.get(secondIndex);
 
                 AFN result = ThompsonAlgorithm.constructForUnion(afn1, afn2);
+                // Llamada al método para actualizar los estados de aceptación en la unión
+                //result.setAcceptingStatesForUnion(afn1, afn2);
                 addAFN(result, "Union_" + (afnCounter++));
                 result.printAFN(); //salida en consola de la construccion en cadena de texto del AFN
                 JOptionPane.showMessageDialog(null, "AFNs unidos correctamente.");
