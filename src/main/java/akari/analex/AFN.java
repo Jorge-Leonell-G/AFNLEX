@@ -166,14 +166,10 @@ public class AFN {
         System.out.println("Estado inicial: " + this.startState);
         System.out.println("Estados de aceptación: " + this.acceptingStates);
         // Mostrar tokens asociados a los estados de aceptación
-        System.out.println("Tokens asociados:");
+        System.out.println("Tokens asociados al estado de aceptación:");
         for (int acceptingState : this.acceptingStates) {
-            String tokenType = this.tokenTypes.get(acceptingState);
+            String tokenType = this.getState(acceptingState).getTokenType();
             System.out.println("  Estado " + acceptingState + " => Token: " + (tokenType != null ? tokenType : "Ninguno"));
-        }
-        System.out.println("Contenido de tokenTypes:");
-        for (Map.Entry<Integer, String> entry : tokenTypes.entrySet()) {
-            System.out.println("  Clave: " + entry.getKey() + " => Valor: " + entry.getValue());
         }
         System.out.println("Transiciones:");
         for (Map.Entry<Integer, State> entry : this.states.entrySet()) {
@@ -199,10 +195,11 @@ public class AFN {
         sb.append("Estados: ").append(this.states.keySet()).append("\n");
         sb.append("Estado de inicio: ").append(this.startState).append("\n");
         sb.append("Estados de aceptación: ").append(this.acceptingStates).append("\n");
-        sb.append("Tipos de token asociados:\n");
-        for (Map.Entry<Integer, String> entry : tokenTypes.entrySet()) {
-            sb.append("  Estado ").append(entry.getKey())
-            .append(" => ").append(entry.getValue()).append("\n");
+        sb.append("Tipos de token asociados al estado de aceptación:\n");
+        for (int acceptingState : this.acceptingStates) {
+            String tokenType = this.getState(acceptingState).getTokenType();
+            sb.append("  Estado ").append(acceptingState)
+            .append(" => Token: ").append(tokenType != null ? tokenType : "Ninguno").append("\n");
         }
         
         sb.append("Transiciones:\n");
