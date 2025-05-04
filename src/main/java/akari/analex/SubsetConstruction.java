@@ -23,16 +23,13 @@ public class SubsetConstruction {
     afd.setStartState(nextStateId);
 
     // Marcar estado de aceptación si algún estado en la cerradura inicial es aceptante
-    for (int stateId : startStateSet) {
-        if (afn.getAcceptingStates().contains(stateId)) {
-            afd.addAcceptingState(nextStateId);
-            String tokenType = afn.getTokenType(stateId);
-            if (tokenType != null) {
-                afd.setTokenType(nextStateId, tokenType);
-            }
-            break;
-        }
+    String tokenType = getAcceptingTokenType(afn, startStateSet);
+    
+    if (tokenType != null) {
+        afd.addAcceptingState(0);
+        afd.setTokenType(0, tokenType);
     }
+
 
     queue.offer(startStateSet);
     nextStateId++;
@@ -62,17 +59,11 @@ public class SubsetConstruction {
                 afd.addState(toState);
 
                 // Verificar si algún estado es de aceptación
-                for (int stateId : epsilonClosureSet) {
-                    if (afn.getAcceptingStates().contains(stateId)) {
-                        afd.addAcceptingState(toState);
-                        String tokenType = afn.getTokenType(stateId);
-                        if (tokenType != null) {
-                            afd.setTokenType(toState, tokenType);
-                        }
-                        break;
-                    }
+                String localTokenType = getAcceptingTokenType(afn, epsilonClosureSet);
+                if (localTokenType != null) {
+                    afd.addAcceptingState(toState);
+                    afd.setTokenType(toState, localTokenType);
                 }
-
                 queue.offer(epsilonClosureSet);
             }
 

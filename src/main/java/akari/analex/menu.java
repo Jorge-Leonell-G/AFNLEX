@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.*;
 
 /**
@@ -259,6 +260,12 @@ public class menu extends JFrame {
                 saveAFDToFile(afd, fileName);
                 saveAFDToObject(afd, fileName);
                 afd.printAFD(); //salida en consola de la construccion en cadena de texto del AFN (ER to AFN)
+                Set<Integer> acceptingStates = afd.getAcceptingStates();
+                for (int state : acceptingStates) {
+                    String token = afd.getTokenType(state);
+                    System.out.println("Estado de aceptación: " + state + " → Token: " + token);
+                }
+
                 JOptionPane.showMessageDialog(null, afd.toString(), "AFD Generado", JOptionPane.INFORMATION_MESSAGE);
                 
                 //String dotContent = afd.toString();

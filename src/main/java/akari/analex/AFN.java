@@ -46,41 +46,6 @@ public class AFN {
             System.out.println("Estado no es de aceptación: " + acceptingStateId);
         }
     }
-    
-    public void setAcceptingStatesForUnion(AFN afn1, AFN afn2) {
-    // Unión de los estados de aceptación de afn1
-        for (int acceptingState : afn1.getAcceptingStates()) {
-            this.addAcceptingState(acceptingState);
-            this.setTokenType(acceptingState, afn1.getTokenType(acceptingState));
-        }
-
-        // Unión de los estados de aceptación de afn2
-        for (int acceptingState : afn2.getAcceptingStates()) {
-            this.addAcceptingState(acceptingState);
-            this.setTokenType(acceptingState, afn2.getTokenType(acceptingState));
-        }
-}
-    
-    // Establecer el estado de aceptación para la concatenación
-    public void setAcceptingStatesForConcatenation(AFN afn2) {
-        // El nuevo AFN hereda los estados de aceptación del segundo AFN
-        for (int acceptingState : afn2.getAcceptingStates()) {
-            this.addAcceptingState(acceptingState);
-            this.setTokenType(acceptingState, afn2.getTokenType(acceptingState));
-        }
-    }
-    
-    // Establecer el estado de aceptación para la cerradura positiva (+)
-    public void setAcceptingStatesForPositive(int newAcceptingStateId, String tokenType) {
-        this.addAcceptingState(newAcceptingStateId);
-        this.setTokenType(newAcceptingStateId, tokenType);
-    }
-
-    // Establecer el estado de aceptación para la cerradura de Kleene (*)
-    public void setAcceptingStatesForKleene(int newAcceptingStateId, String tokenType) {
-        this.addAcceptingState(newAcceptingStateId);
-        this.setTokenType(newAcceptingStateId, tokenType);
-    }
 
     public State createState() {
         State newState = new State(nextStateId++);
@@ -220,57 +185,5 @@ public class AFN {
         sb.append("--- Fin AFN ---\n");
 
         return sb.toString();
-}
-    
-    //Método para convertir el formato hasheado del objeto afn a una cadena legible
-    /*
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("AFN con ").append(states.size()).append(" estados.\n");
-        sb.append("Estado de inicio: ").append(startState).append("\n");
-        sb.append("Estados de aceptación: ").append(acceptingStates).append("\n");
-        sb.append("Transiciones:\n");
-        
-        for (State state : states.values()) {
-            sb.append(state).append("\n");
-        }
-        
-        return sb.toString();
     }
-    
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("AFN con ").append(states.size()).append(" estados.\n");
-        sb.append("Estado de inicio: ").append(startState).append("\n");
-        sb.append("Estado de aceptación: ").append(acceptingStates).append("\n");
-        sb.append("Transiciones:\n");
-
-        for (State state : states.values()) {
-            // Transiciones normales (con símbolo)
-            for (Map.Entry<Character, Set<Integer>> entry : state.getTransitions().entrySet()) {
-                char symbol = entry.getKey();
-                for (Integer destId : entry.getValue()) {
-                    sb.append("Estado ").append(state.getId())
-                    .append(" --")
-                    .append(symbol)
-                    .append("--> Estado ")
-                    .append(destId)
-                    .append("\n");
-                }
-            }
-        
-            // Transiciones epsilon (sin símbolo)
-            for (Integer destId : state.getEpsilonTransitions()) {
-                sb.append("Estado ").append(state.getId())
-                .append(" --ε--> Estado ")
-                .append(destId)
-                .append("\n");
-            }
-        }
-
-        return sb.toString();
-    }
-    */
 }

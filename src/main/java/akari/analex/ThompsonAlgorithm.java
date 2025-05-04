@@ -115,11 +115,14 @@ public class ThompsonAlgorithm {
         AFN resultAFN = new AFN();
         State startState = resultAFN.createState();
         resultAFN.setStartState(startState.getId());
+
+        // Mapear y copiar estados de afn1
         Map<Integer, Integer> afn1StateMap = new HashMap<>();
         for (State state : afn1.getStates().values()) {
-            afn1StateMap.put(state.getId(), resultAFN.createState().getId());
+            int newId = resultAFN.createState().getId();
+            afn1StateMap.put(state.getId(), newId);
             if (afn1.getStartState() == state.getId()) {
-                resultAFN.addEpsilonTransition(startState.getId(), afn1StateMap.get(state.getId()));
+                resultAFN.addEpsilonTransition(startState.getId(), newId);
             }
         }
         for (State state : afn1.getStates().values()) {
@@ -134,11 +137,14 @@ public class ThompsonAlgorithm {
                 resultAFN.addEpsilonTransition(fromStateId, afn1StateMap.get(toStateId));
             }
         }
+
+        // Mapear y copiar estados de afn2
         Map<Integer, Integer> afn2StateMap = new HashMap<>();
         for (State state : afn2.getStates().values()) {
-            afn2StateMap.put(state.getId(), resultAFN.createState().getId());
+            int newId = resultAFN.createState().getId();
+            afn2StateMap.put(state.getId(), newId);
             if (afn2.getStartState() == state.getId()) {
-                resultAFN.addEpsilonTransition(startState.getId(), afn2StateMap.get(state.getId()));
+                resultAFN.addEpsilonTransition(startState.getId(), newId);
             }
         }
         for (State state : afn2.getStates().values()) {
@@ -153,36 +159,29 @@ public class ThompsonAlgorithm {
                 resultAFN.addEpsilonTransition(fromStateId, afn2StateMap.get(toStateId));
             }
         }
-        State acceptState = resultAFN.createState();
-        resultAFN.addAcceptingState(acceptState.getId());
-        // Asignar el tipo de token si alguno de los AFNs lo tiene
-        for (int stateId : afn1.getAcceptingStates()) {
-            State original = afn1.getState(stateId);
-            if (original.getTokenType() != null) {
-                resultAFN.getState(acceptState.getId()).setTokenType(original.getTokenType());
-                break;
-            }
-        }
-        for (int stateId : afn2.getAcceptingStates()) {
-            State original = afn2.getState(stateId);
-            if (original.getTokenType() != null) {
-                resultAFN.getState(acceptState.getId()).setTokenType(original.getTokenType());
-                break;
+
+        // Marcar estados de aceptación y conservar tipo de token
+        for (int oldAcceptId : afn1.getAcceptingStates()) {
+            int newAcceptId = afn1StateMap.get(oldAcceptId);
+            resultAFN.addAcceptingState(newAcceptId);
+            String tokenType = afn1.getState(oldAcceptId).getTokenType();
+            if (tokenType != null) {
+                resultAFN.getState(newAcceptId).setTokenType(tokenType);
             }
         }
 
-        for (int stateId : afn1StateMap.values()) {
-            if (afn1.getStates().get(getKeyByValue(afn1StateMap, stateId)).isAccepting()) {
-                resultAFN.addEpsilonTransition(stateId, acceptState.getId());
+        for (int oldAcceptId : afn2.getAcceptingStates()) {
+            int newAcceptId = afn2StateMap.get(oldAcceptId);
+            resultAFN.addAcceptingState(newAcceptId);
+            String tokenType = afn2.getState(oldAcceptId).getTokenType();
+            if (tokenType != null) {
+                resultAFN.getState(newAcceptId).setTokenType(tokenType);
             }
         }
-        for (int stateId : afn2StateMap.values()) {
-            if (afn2.getStates().get(getKeyByValue(afn2StateMap, stateId)).isAccepting()) {
-                resultAFN.addEpsilonTransition(stateId, acceptState.getId());
-            }
-        }
+
         return resultAFN;
     }
+
 
     static AFN constructForKleeneStar(AFN afn) {
         AFN resultAFN = new AFN();
