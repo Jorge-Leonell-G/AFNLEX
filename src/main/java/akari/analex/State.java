@@ -81,6 +81,6 @@ public class State {
     
     @Override
     public String toString() {
-        return "Estado " + id + (isAccepting ? " (de aceptación)" : "");
+        return "Estado " + id + (isAccepting ? " (de aceptación, token: )" + tokenType + ")" : "");
     }
 }

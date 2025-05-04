@@ -22,7 +22,7 @@ public class AFN {
     private Map<Integer, State> states;
     private int startState;
     protected Set<Integer> acceptingStates;
-    private Map<Integer, String> tokenTypes; // Mapa para los tipos de token
+    protected Map<Integer, String> tokenTypes; // Mapa para los tipos de token
     private int nextStateId;
 
     public AFN() {
@@ -60,6 +60,27 @@ public class AFN {
             this.setTokenType(acceptingState, afn2.getTokenType(acceptingState));
         }
 }
+    
+    // Establecer el estado de aceptación para la concatenación
+    public void setAcceptingStatesForConcatenation(AFN afn2) {
+        // El nuevo AFN hereda los estados de aceptación del segundo AFN
+        for (int acceptingState : afn2.getAcceptingStates()) {
+            this.addAcceptingState(acceptingState);
+            this.setTokenType(acceptingState, afn2.getTokenType(acceptingState));
+        }
+    }
+    
+    // Establecer el estado de aceptación para la cerradura positiva (+)
+    public void setAcceptingStatesForPositive(int newAcceptingStateId, String tokenType) {
+        this.addAcceptingState(newAcceptingStateId);
+        this.setTokenType(newAcceptingStateId, tokenType);
+    }
+
+    // Establecer el estado de aceptación para la cerradura de Kleene (*)
+    public void setAcceptingStatesForKleene(int newAcceptingStateId, String tokenType) {
+        this.addAcceptingState(newAcceptingStateId);
+        this.setTokenType(newAcceptingStateId, tokenType);
+    }
 
     public State createState() {
         State newState = new State(nextStateId++);
@@ -144,6 +165,16 @@ public class AFN {
         System.out.println("Estados: " + this.states.keySet());
         System.out.println("Estado inicial: " + this.startState);
         System.out.println("Estados de aceptación: " + this.acceptingStates);
+        // Mostrar tokens asociados a los estados de aceptación
+        System.out.println("Tokens asociados:");
+        for (int acceptingState : this.acceptingStates) {
+            String tokenType = this.tokenTypes.get(acceptingState);
+            System.out.println("  Estado " + acceptingState + " => Token: " + (tokenType != null ? tokenType : "Ninguno"));
+        }
+        System.out.println("Contenido de tokenTypes:");
+        for (Map.Entry<Integer, String> entry : tokenTypes.entrySet()) {
+            System.out.println("  Clave: " + entry.getKey() + " => Valor: " + entry.getValue());
+        }
         System.out.println("Transiciones:");
         for (Map.Entry<Integer, State> entry : this.states.entrySet()) {
             int stateId = entry.getKey();
@@ -168,8 +199,13 @@ public class AFN {
         sb.append("Estados: ").append(this.states.keySet()).append("\n");
         sb.append("Estado de inicio: ").append(this.startState).append("\n");
         sb.append("Estados de aceptación: ").append(this.acceptingStates).append("\n");
+        sb.append("Tipos de token asociados:\n");
+        for (Map.Entry<Integer, String> entry : tokenTypes.entrySet()) {
+            sb.append("  Estado ").append(entry.getKey())
+            .append(" => ").append(entry.getValue()).append("\n");
+        }
+        
         sb.append("Transiciones:\n");
-
         // Transiciones normales (con símbolo)
         for (Map.Entry<Integer, State> entry : this.states.entrySet()) {
             int stateId = entry.getKey();

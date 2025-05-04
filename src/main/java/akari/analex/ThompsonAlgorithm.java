@@ -23,7 +23,10 @@ public class ThompsonAlgorithm {
         afn.setStartState(startState.getId());
         afn.addAcceptingState(acceptState.getId());
         if (tokenType != null) {
-            afn.getState(acceptState.getId()).setTokenType(tokenType);
+            //afn.getState(acceptState.getId()).setTokenType(tokenType);
+            State state = afn.getState(acceptState.getId());
+            state.setTokenType(tokenType);
+            afn.tokenTypes.put(acceptState.getId(), tokenType);
         }
         return afn;
     }
@@ -89,6 +92,21 @@ public class ThompsonAlgorithm {
             }
         }
         resultAFN.acceptingStates = newAcceptingStates;
+        if (!newAcceptingStates.isEmpty()) {
+            int finalAcceptingState = newAcceptingStates.iterator().next();
+            State originalAcceptingState = afn2.getState(afn2.getAcceptingStates().iterator().next());
+            resultAFN.getState(finalAcceptingState).setTokenType(originalAcceptingState.getTokenType());
+        }
+
+        // Copiar el tipo de token del último estado de aceptación del afn2 al nuevo estado final del AFN combinado
+        for (int originalAcceptId : afn2.getAcceptingStates()) {
+            String tokenType = afn2.getState(originalAcceptId).getTokenType();
+            if (tokenType != null) {
+                int mappedAcceptId = afn2StateMap.get(originalAcceptId);
+                resultAFN.getState(mappedAcceptId).setTokenType(tokenType);
+            }
+        }
+
         return resultAFN;
     }
 
@@ -136,6 +154,22 @@ public class ThompsonAlgorithm {
         }
         State acceptState = resultAFN.createState();
         resultAFN.addAcceptingState(acceptState.getId());
+        // Asignar el tipo de token si alguno de los AFNs lo tiene
+        for (int stateId : afn1.getAcceptingStates()) {
+            State original = afn1.getState(stateId);
+            if (original.getTokenType() != null) {
+                resultAFN.getState(acceptState.getId()).setTokenType(original.getTokenType());
+                break;
+            }
+        }
+        for (int stateId : afn2.getAcceptingStates()) {
+            State original = afn2.getState(stateId);
+            if (original.getTokenType() != null) {
+                resultAFN.getState(acceptState.getId()).setTokenType(original.getTokenType());
+                break;
+            }
+        }
+
         for (int stateId : afn1StateMap.values()) {
             if (afn1.getStates().get(getKeyByValue(afn1StateMap, stateId)).isAccepting()) {
                 resultAFN.addEpsilonTransition(stateId, acceptState.getId());
@@ -155,6 +189,15 @@ public class ThompsonAlgorithm {
         State acceptState = resultAFN.createState();
         resultAFN.setStartState(startState.getId());
         resultAFN.addAcceptingState(acceptState.getId());
+        
+        for (int acceptId : afn.getAcceptingStates()) {
+            State original = afn.getState(acceptId);
+            if (original.getTokenType() != null) {
+                resultAFN.getState(acceptState.getId()).setTokenType(original.getTokenType());
+                break;
+            }
+        }
+
         Map<Integer, Integer> stateMap = new HashMap<>();
         for (State state : afn.getStates().values()) {
             stateMap.put(state.getId(), resultAFN.createState().getId());

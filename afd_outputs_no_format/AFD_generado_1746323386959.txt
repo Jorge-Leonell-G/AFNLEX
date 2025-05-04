@@ -1,0 +1,15 @@
+Estados:
+0
+1
+2
+Alfabeto:
+D
+:
+Transiciones:
+0,D->1
+0,:->2
+Estado inicial:
+0
+Estados finales:
+1
+2

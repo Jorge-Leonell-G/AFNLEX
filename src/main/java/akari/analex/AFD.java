@@ -6,8 +6,10 @@ package akari.analex;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -212,5 +214,44 @@ public class AFD {
 
         return sb.toString();
     }
+    
+    /*
+    public String toRawString() {
+        StringBuilder sb = new StringBuilder();
 
+        sb.append("Estados:\n");
+        for (int estado : this.states) {
+            sb.append(estado).append("\n");
+        }
+
+        sb.append("Alfabeto:\n");
+        Set<Character> alfabeto = new HashSet<>();
+        for (Map<Character, Integer> trans : this.transitions.values()) {
+            alfabeto.addAll(trans.keySet());
+        }
+        for (char simbolo : alfabeto) {
+            sb.append(simbolo).append("\n");
+        }
+
+        sb.append("Transiciones:\n");
+        for (Map.Entry<Integer, Map<Character, Integer>> entry : this.transitions.entrySet()) {
+            int origen = entry.getKey();
+            Map<Character, Integer> mapa = entry.getValue();
+            for (Map.Entry<Character, Integer> transicion : mapa.entrySet()) {
+                sb.append(origen).append(",").append(transicion.getKey()).append("->").append(transicion.getValue()).append("\n");
+            }
+        }
+        
+        sb.append("Tipos de token de aceptación:\n").append(this.acceptingTokenTypes).append("\n");
+
+        sb.append("Estado inicial:\n").append(this.startState).append("\n");
+
+        sb.append("Estados finales:\n");
+        for (int estadoFinal : this.acceptingStates) {
+            sb.append(estadoFinal).append("\n");
+        }
+
+        return sb.toString();
+    }
+    */
 }

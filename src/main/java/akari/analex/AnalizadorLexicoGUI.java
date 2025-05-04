@@ -26,6 +26,7 @@ import java.util.Set;
     private DefaultTableModel afdTableModel;
     private JButton analyzeButton;
     private AnalizadorLexico analizador;
+    private JButton loadAFDButton;
 
     public AnalizadorLexicoGUI() {
     super("Analizador Léxico con AFD");
@@ -45,8 +46,10 @@ import java.util.Set;
     JPanel rulesPanel = new JPanel(new BorderLayout());
     rulesPanel.setBorder(BorderFactory.createTitledBorder("Reglas Léxicas (tipo=patrón, una por línea)"));
     rulesTextArea = new JTextArea();
-
-    // 🔵 <<<<<< Agregamos las reglas por defecto aquí
+    rulesTextArea.setEditable(false); // Solo visualización
+    rulesTextArea.setText("Reglas cargadas desde archivo aparecerán aquí.");
+    // Agregamos las reglas por defecto aquí
+/*
     rulesTextArea.setText(
             "PALABRA_CLAVE=if|else\n" +
             "IDENTIFICADOR=[a-zA-Z][a-zA-Z0-9]*\n" +
@@ -55,10 +58,13 @@ import java.util.Set;
             "ESPACIO=\\s+"
     );
     rulesPanel.add(new JScrollPane(rulesTextArea), BorderLayout.CENTER);
-
+*/
     // Botón de análisis
     analyzeButton = new JButton("Analizar");
     analyzeButton.addActionListener(this);
+    
+    loadAFDButton = new JButton("Cargar AFD desde archivo");
+    loadAFDButton.addActionListener(this);
 
     // Panel de salida
     JPanel outputPanel = new JPanel(new BorderLayout());
@@ -92,16 +98,22 @@ import java.util.Set;
     // Agregar los dos subpaneles al bottomPanel
     bottomPanel.add(outputPanel);
     bottomPanel.add(afdTablePanel);
+    
+    JPanel buttonPanel = new JPanel(new FlowLayout());
+    buttonPanel.add(analyzeButton);
+    buttonPanel.add(loadAFDButton);
 
     // Crear un nuevo panel para el botón y el bottomPanel
     JPanel southPanel = new JPanel(new BorderLayout());
-    southPanel.add(analyzeButton, BorderLayout.NORTH);
+    southPanel.add(buttonPanel, BorderLayout.NORTH);
     southPanel.add(bottomPanel, BorderLayout.CENTER);
 
     // Agregar los paneles principales al frame
     add(inputPanel, BorderLayout.NORTH);
     add(rulesPanel, BorderLayout.CENTER);
     add(southPanel, BorderLayout.SOUTH);
+    
+    
 
     setVisible(true);
 }
@@ -109,40 +121,39 @@ import java.util.Set;
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == analyzeButton) {
-            outputTextArea.setText("");
-            analizador = new AnalizadorLexico(); // Reiniciar el analizador para nuevas reglas
+        if (e.getSource() == loadAFDButton) {
+            JFileChooser fileChooser = new JFileChooser();
+            int result = fileChooser.showOpenDialog(this);
+            if (result == JFileChooser.APPROVE_OPTION) {
+                try {
+                    java.io.File file = fileChooser.getSelectedFile();
+                    java.io.FileInputStream fis = new java.io.FileInputStream(file);
+                    java.io.ObjectInputStream ois = new java.io.ObjectInputStream(fis);
+                    AFD afdCargado = (AFD) ois.readObject();
+                    ois.close();
 
-            // Parsear las reglas del área de texto
-            String[] rules = rulesTextArea.getText().split("\n");
-            for (String rule : rules) {
-                String[] parts = rule.split("=", 2);
-                if (parts.length == 2) {
-                    analizador.agregarReglaLexica(parts[0].trim(), parts[1].trim());
-                } else if (!rule.trim().isEmpty()) {
-                    outputTextArea.append("Error en la regla: " + rule + "\n");
+                    analizador = new AnalizadorLexico(); // Reiniciar analizador
+                    analizador.cargarAFD(afdCargado);
+
+                    updateAFNTable(afdCargado);
+                    outputTextArea.setText("AFD cargado exitosamente desde archivo: " + file.getName() + "\n");
+
+                    // Mostrar reglas del AFD cargado
+                    StringBuilder reglas = new StringBuilder();
+                    for (int estado : afdCargado.getStates()) {
+                        if (afdCargado.isAccepting(estado)) {
+                            String tipoToken = afdCargado.getTokenType(estado);
+                            if (tipoToken != null) {
+                                reglas.append(tipoToken).append(" = patrón_desconocido\n"); // puedes adaptar este texto
+                            }
+                        }
+                    }
+                    rulesTextArea.setText(reglas.toString().isEmpty() ? "No se encontraron reglas." : reglas.toString());
+
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    outputTextArea.setText("Error al cargar el AFD desde archivo.\n" + ex.getMessage());
                 }
-            }
-
-            // Construir el AFD
-            analizador.unionAnalizadorLexico(analizador.obtenerReglasLexicas());
-            AFD afd = analizador.analizadorAFD;
-
-            if (afd != null) {
-                // Mostrar la tabla del AFD
-                updateAFNTable(afd);
-
-                // Analizar el texto de entrada
-                List<Token> tokens = analizador.analizarCadena(inputTextArea.getText());
-                for (Token token : tokens) {
-                    outputTextArea.append(token.toString() + "\n");
-                }
-
-                // animacion basica del analisis para mostrar el estado actual del AFD mientras consume la entrada.
-                animateAnalysis(afd, inputTextArea.getText());
-
-            } else {
-                outputTextArea.append("No se pudo construir el AFD.\n");
             }
         }
     }

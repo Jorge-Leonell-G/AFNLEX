@@ -4,8 +4,10 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.regex.*;
@@ -20,7 +22,8 @@ public class menu extends JFrame {
     private JList<String> afnList;
     private ArrayList<AFN> afnStorage; // Guarda los AFNs creados
     private int afnCounter = 1; // Para nombrar los AFNs automáticamente
-    //private final String directoryPath = "AFNbasicos";
+    private final String graphDirectory = "AFD_GRAPHS";
+    private final String dotDirectory = "AFD_DOTS";
 
     public menu() {
         setTitle("Menu del programa de compiladores");
@@ -37,12 +40,17 @@ public class menu extends JFrame {
         
         // Crear carpeta si no existe
         
-        /*
-        File directory = new File(directoryPath);
-        if (!directory.exists()) {
-            directory.mkdir();
+        
+        File graphDirectoryFolder = new File(graphDirectory);
+        if (!graphDirectoryFolder.exists()) {
+            graphDirectoryFolder.mkdir();
         }
-        */
+        
+        File dotDirectoryFolder = new File(dotDirectory);
+        if (!dotDirectoryFolder.exists()) {
+            dotDirectoryFolder.mkdir();
+        }
+        
         
         //Carga de manera inicial de los AFN
         //loadSavedAFNs();
@@ -89,7 +97,7 @@ public class menu extends JFrame {
                 String symbol = JOptionPane.showInputDialog("Ingrese un símbolo:");
                 
                 String tokenType = JOptionPane.showInputDialog("Ingrese el tipo de token (opcional):");
-                if (symbol != null && !symbol.isEmpty()) {
+                if (symbol != null && !symbol.isEmpty() && symbol.matches("^.$")) {
                     AFN afn = new AFN();
                     afn = ThompsonAlgorithm.constructForSymbol(afn, symbol.charAt(0), tokenType);
                     addAFN(afn, "AFN_" + symbol + (afnCounter++));
@@ -249,12 +257,13 @@ public class menu extends JFrame {
                 // Guardado automático del AFD como .txt
                 String fileName = "AFD_generado_" + System.currentTimeMillis() + ".txt";
                 saveAFDToFile(afd, fileName);
+                saveAFDToObject(afd, fileName);
                 afd.printAFD(); //salida en consola de la construccion en cadena de texto del AFN (ER to AFN)
                 JOptionPane.showMessageDialog(null, afd.toString(), "AFD Generado", JOptionPane.INFORMATION_MESSAGE);
                 
                 //String dotContent = afd.toString();
-                String dotFilePath = "afd_outputs/" + fileName + ".dot";
-                String imgFilePath = "afd_outputs/" + fileName + ".png";
+                String dotFilePath = dotDirectory + File.separator + fileName + ".dot";
+                String imgFilePath = graphDirectory + File.separator + fileName + ".png";
                 exportAFDToDot(afd, dotFilePath);
                 generateImage(dotFilePath, imgFilePath);
                 //afdStorage.add(afd);
@@ -309,6 +318,28 @@ public class menu extends JFrame {
         } catch (IOException ex) {
             JOptionPane.showMessageDialog(null, "Error al guardar el AFD: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             ex.printStackTrace();
+        }
+    }
+    
+    private void saveAFDToObject(AFD afd, String fileName) {
+        try {
+            // Crear la carpeta si no existe
+            File folder = new File("afd_outputs_no_format");
+            if (!folder.exists()) {
+                folder.mkdir();
+            }
+
+            // Crear la ruta completa del archivo dentro de la carpeta
+            File outputFile = new File(folder, fileName);
+
+            try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(outputFile))) {
+                oos.writeObject(afd);
+                System.out.println("AFD guardado exitosamente en " + outputFile.getAbsolutePath());
+            }
+
+        } catch (IOException e) {
+            System.err.println("Error al guardar el AFD:");
+            e.printStackTrace();
         }
     }
     

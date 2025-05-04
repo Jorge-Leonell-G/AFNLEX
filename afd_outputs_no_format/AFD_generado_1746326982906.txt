@@ -1,0 +1,13 @@
+Estados:
+0
+1
+Alfabeto:
+A
+Transiciones:
+0,A->1
+Tipos de token de aceptación:
+{}
+Estado inicial:
+0
+Estados finales:
+1

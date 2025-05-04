@@ -1,0 +1,11 @@
+Estados:
+0
+1
+Alfabeto:
+F
+Transiciones:
+0,F->1
+Estado inicial:
+0
+Estados finales:
+1
