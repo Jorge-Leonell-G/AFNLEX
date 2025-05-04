@@ -33,6 +33,8 @@ public class ThompsonAlgorithm {
 
     static AFN constructForConcatenation(AFN afn1, AFN afn2) {
     AFN resultAFN = new AFN();
+
+    // Mapear y copiar estados de afn1
     Map<Integer, Integer> afn1StateMap = new HashMap<>();
     for (State state : afn1.getStates().values()) {
         State newState = resultAFN.createState();
@@ -41,64 +43,64 @@ public class ThompsonAlgorithm {
             resultAFN.setStartState(newState.getId());
         }
         if (afn1.getAcceptingStates().contains(state.getId())) {
+            // Agregaremos transiciones epsilon luego, no conservar como aceptante aquí
+            // pero marcamos como aceptante temporalmente para identificarlo después
             resultAFN.addAcceptingState(newState.getId());
         }
     }
 
+    // Copiar transiciones de afn1
     for (State state : afn1.getStates().values()) {
-        int fromStateId = afn1StateMap.get(state.getId());
+        int from = afn1StateMap.get(state.getId());
         for (Map.Entry<Character, Set<Integer>> entry : state.getTransitions().entrySet()) {
-            char symbol = entry.getKey();
-            for (int toStateId : entry.getValue()) {
-                resultAFN.addTransition(fromStateId, symbol, afn1StateMap.get(toStateId));
+            for (int to : entry.getValue()) {
+                resultAFN.addTransition(from, entry.getKey(), afn1StateMap.get(to));
             }
         }
-        for (int toStateId : state.getEpsilonTransitions()) {
-            resultAFN.addEpsilonTransition(fromStateId, afn1StateMap.get(toStateId));
+        for (int to : state.getEpsilonTransitions()) {
+            resultAFN.addEpsilonTransition(from, afn1StateMap.get(to));
         }
     }
 
+    // Mapear y copiar estados de afn2
     Map<Integer, Integer> afn2StateMap = new HashMap<>();
     for (State state : afn2.getStates().values()) {
         State newState = resultAFN.createState();
         afn2StateMap.put(state.getId(), newState.getId());
-        if (afn2.getStartState() == state.getId() && resultAFN.getStartState() == -1) {
-            resultAFN.setStartState(newState.getId());
-        }
     }
 
+    // Copiar transiciones de afn2
     for (State state : afn2.getStates().values()) {
-        int fromStateId = afn2StateMap.get(state.getId());
+        int from = afn2StateMap.get(state.getId());
         for (Map.Entry<Character, Set<Integer>> entry : state.getTransitions().entrySet()) {
-            char symbol = entry.getKey();
-            for (int toStateId : entry.getValue()) {
-                resultAFN.addTransition(fromStateId, symbol, afn2StateMap.get(toStateId));
+            for (int to : entry.getValue()) {
+                resultAFN.addTransition(from, entry.getKey(), afn2StateMap.get(to));
             }
         }
-        for (int toStateId : state.getEpsilonTransitions()) {
-            resultAFN.addEpsilonTransition(fromStateId, afn2StateMap.get(toStateId));
+        for (int to : state.getEpsilonTransitions()) {
+            resultAFN.addEpsilonTransition(from, afn2StateMap.get(to));
         }
     }
 
-    // Eliminar antiguos estados de aceptación de afn1 y conectar con inicio de afn2
-    for (int acceptStateId1 : afn1StateMap.values()) {
-        if (resultAFN.getState(acceptStateId1).isAccepting()) {
-            resultAFN.getState(acceptStateId1).setAccepting(false);
-            resultAFN.addEpsilonTransition(acceptStateId1, afn2StateMap.get(afn2.getStartState()));
-        }
+    // Conectar los estados de aceptación de afn1 con el estado inicial de afn2
+    int afn2Start = afn2StateMap.get(afn2.getStartState());
+    for (int oldAccepting : new HashSet<>(resultAFN.getAcceptingStates())) {
+        resultAFN.getState(oldAccepting).setAccepting(false);
+        resultAFN.addEpsilonTransition(oldAccepting, afn2Start);
     }
 
-    // Agregar nuevos estados de aceptación desde afn2
+    // Establecer nuevos estados de aceptación (desde afn2)
     Set<Integer> newAcceptingStates = new HashSet<>();
     for (int originalAcceptId : afn2.getAcceptingStates()) {
-        int mappedAcceptId = afn2StateMap.get(originalAcceptId);
-        resultAFN.addAcceptingState(mappedAcceptId);
-        // Copiar tokenType desde afn2
+        int mappedId = afn2StateMap.get(originalAcceptId);
+        resultAFN.addAcceptingState(mappedId);
+
+        // Copiar tokenType
         String tokenType = afn2.getState(originalAcceptId).getTokenType();
         if (tokenType != null) {
-            resultAFN.getState(mappedAcceptId).setTokenType(tokenType);
+            resultAFN.getState(mappedId).setTokenType(tokenType);
         }
-        newAcceptingStates.add(mappedAcceptId);
+        newAcceptingStates.add(mappedId);
     }
 
     resultAFN.acceptingStates = newAcceptingStates;
@@ -110,6 +112,7 @@ public class ThompsonAlgorithm {
 
     return resultAFN;
 }
+
 
     static AFN constructForUnion(AFN afn1, AFN afn2) {
         AFN resultAFN = new AFN();
@@ -183,48 +186,65 @@ public class ThompsonAlgorithm {
     }
 
 
-    static AFN constructForKleeneStar(AFN afn) {
-        AFN resultAFN = new AFN();
-        State startState = resultAFN.createState();
-        State acceptState = resultAFN.createState();
-        resultAFN.setStartState(startState.getId());
-        resultAFN.addAcceptingState(acceptState.getId());
-        
-        for (int acceptId : afn.getAcceptingStates()) {
-            State original = afn.getState(acceptId);
-            if (original.getTokenType() != null) {
-                resultAFN.getState(acceptState.getId()).setTokenType(original.getTokenType());
-                break;
-            }
+   static AFN constructForKleeneStar(AFN afn) {
+    AFN resultAFN = new AFN();
+    State startState = resultAFN.createState();
+    State acceptState = resultAFN.createState();
+    resultAFN.setStartState(startState.getId());
+    resultAFN.addAcceptingState(acceptState.getId());
+
+    // Asignar el tokenType del primer estado de aceptación del AFN original
+    for (int acceptId : afn.getAcceptingStates()) {
+        State original = afn.getState(acceptId);
+        if (original.getTokenType() != null) {
+            resultAFN.getState(acceptState.getId()).setTokenType(original.getTokenType());
+            break;
+        }
+    }
+
+    Map<Integer, Integer> stateMap = new HashMap<>();
+    for (State state : afn.getStates().values()) {
+        int newStateId = resultAFN.createState().getId();
+        stateMap.put(state.getId(), newStateId);
+
+        // Conectar el nuevo estado de inicio con el antiguo
+        if (afn.getStartState() == state.getId()) {
+            resultAFN.addEpsilonTransition(startState.getId(), newStateId);
         }
 
-        Map<Integer, Integer> stateMap = new HashMap<>();
-        for (State state : afn.getStates().values()) {
-            stateMap.put(state.getId(), resultAFN.createState().getId());
-            if (afn.getStartState() == state.getId()) {
-                resultAFN.addEpsilonTransition(startState.getId(), stateMap.get(state.getId()));
-            }
-            if (afn.getAcceptingStates().contains(state.getId())) {
-                int mappedAcceptStateId = stateMap.get(state.getId()); // Obtener el ID mapeado correctamente
-                resultAFN.addEpsilonTransition(mappedAcceptStateId, acceptState.getId());
-                resultAFN.addEpsilonTransition(mappedAcceptStateId, stateMap.get(afn.getStartState()));
-            }
+        // Conectar antiguos estados de aceptación al nuevo de aceptación y a inicio
+        if (afn.getAcceptingStates().contains(state.getId())) {
+            resultAFN.addEpsilonTransition(newStateId, acceptState.getId());
+            resultAFN.addEpsilonTransition(newStateId, stateMap.get(afn.getStartState()));
         }
-        for (State state : afn.getStates().values()) {
-            int fromStateId = stateMap.get(state.getId());
-            for (Map.Entry<Character, Set<Integer>> entry : state.getTransitions().entrySet()) {
-                char symbol = entry.getKey();
-                for (int toStateId : entry.getValue()) {
-                    resultAFN.addTransition(fromStateId, symbol, stateMap.get(toStateId));
-                }
-            }
-            for (int toStateId : state.getEpsilonTransitions()) {
-                resultAFN.addEpsilonTransition(fromStateId, stateMap.get(toStateId));
-            }
-        }
-        resultAFN.addEpsilonTransition(startState.getId(), acceptState.getId());
-        return resultAFN;
     }
+
+    // Copiar transiciones
+    for (State state : afn.getStates().values()) {
+        int fromStateId = stateMap.get(state.getId());
+        for (Map.Entry<Character, Set<Integer>> entry : state.getTransitions().entrySet()) {
+            char symbol = entry.getKey();
+            for (int toStateId : entry.getValue()) {
+                resultAFN.addTransition(fromStateId, symbol, stateMap.get(toStateId));
+            }
+        }
+        for (int toStateId : state.getEpsilonTransitions()) {
+            resultAFN.addEpsilonTransition(fromStateId, stateMap.get(toStateId));
+        }
+    }
+
+    // Conectar directamente el nuevo inicio con el nuevo final (para la cadena vacía)
+    resultAFN.addEpsilonTransition(startState.getId(), acceptState.getId());
+
+    // Debug opcional
+    System.out.println("--- Debug: Tokens en estados de aceptación (Kleene Star) ---");
+    for (int id : resultAFN.getAcceptingStates()) {
+        System.out.println("Estado " + id + " => Token: " + resultAFN.getState(id).getTokenType());
+    }
+
+    return resultAFN;
+}
+
 
     static AFN constructForPositiveClosure(AFN afn) {
         AFN afnStar = constructForKleeneStar(afn);

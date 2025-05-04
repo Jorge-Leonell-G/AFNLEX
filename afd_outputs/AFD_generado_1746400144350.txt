@@ -1,0 +1,13 @@
+--- AFD ---
+Estados: [0, 1, 2]
+Estado de inicio: 0
+Estados de aceptación: [0, 1, 2]
+Tipos de token de aceptación: {0=REGEX, 1=REGEX, 2=REGEX}
+Transiciones:
+  Estado 0 -- 'x' --> 1
+  Estado 0 -- 'y' --> 2
+  Estado 1 -- 'x' --> 1
+  Estado 1 -- 'y' --> 2
+  Estado 2 -- 'x' --> 1
+  Estado 2 -- 'y' --> 2
+--- Fin AFD ---
