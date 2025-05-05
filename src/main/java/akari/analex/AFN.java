@@ -186,4 +186,48 @@ public class AFN {
 
         return sb.toString();
     }
+    
+    public AFN clone() {
+    AFN clonedAFN = new AFN();
+    Map<Integer, Integer> stateIdMap = new HashMap<>(); // Mapa original->nuevo ID
+
+    // Clonar todos los estados
+    for (Map.Entry<Integer, State> entry : this.states.entrySet()) {
+        int originalId = entry.getKey();
+        State originalState = entry.getValue();
+        State clonedState = new State(originalId);
+        clonedState.setAccepting(originalState.isAccepting());
+
+        // Clonar transiciones
+        for (Map.Entry<Character, Set<Integer>> trans : originalState.getTransitions().entrySet()) {
+            Set<Integer> clonedTargets = new HashSet<>(trans.getValue());
+            clonedState.getTransitions().put(trans.getKey(), clonedTargets);
+        }
+
+        // Clonar transiciones épsilon
+        clonedState.getEpsilonTransitions().addAll(originalState.getEpsilonTransitions());
+
+        clonedAFN.getStates().put(originalId, clonedState);
+        stateIdMap.put(originalId, originalId); // IDs son iguales por ahora
+    }
+
+    // Copiar estado inicial
+    clonedAFN.setStartState(this.startState);
+
+    // Copiar estados de aceptación
+    for (int acceptingId : this.acceptingStates) {
+        clonedAFN.addAcceptingState(acceptingId);
+    }
+
+    // Copiar tipos de token asociados
+    for (Map.Entry<Integer, String> entry : this.tokenTypes.entrySet()) {
+        clonedAFN.setTokenType(entry.getKey(), entry.getValue());
+    }
+
+    // Establecer el próximo ID a usar
+    clonedAFN.nextStateId = this.nextStateId;
+
+    return clonedAFN;
+}
+
 }

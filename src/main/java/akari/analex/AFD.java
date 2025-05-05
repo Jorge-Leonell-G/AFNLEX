@@ -10,6 +10,7 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -23,7 +24,7 @@ import java.util.regex.Pattern;
  * @author Akari Aguilera
  */
 // akari/analex/AFD.java
-public class AFD {
+public class AFD implements Serializable {
     private Map<Integer, Map<Character, Integer>> transitions;
     private Set<Integer> acceptingStates;
     private int startState;

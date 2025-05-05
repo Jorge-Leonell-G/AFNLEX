@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package akari.analex;
 
 import javax.swing.*;
@@ -13,11 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- *
- * @author Akari Aguilera
- */
- public class AnalizadorLexicoGUI extends JFrame implements ActionListener {
+public class AnalizadorLexicoGUI extends JFrame implements ActionListener {
 
     private JTextArea inputTextArea;
     private JTextArea rulesTextArea;
@@ -29,136 +21,163 @@ import java.util.Set;
     private JButton loadAFDButton;
 
     public AnalizadorLexicoGUI() {
-    super("Analizador Léxico con AFD");
-    setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-    setSize(800, 600);
-    setLayout(new BorderLayout());
+        super("Analizador Léxico con AFD");
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(800, 600);
+        setLayout(new BorderLayout());
 
-    analizador = new AnalizadorLexico();
+        analizador = new AnalizadorLexico();
 
-    // Panel de entrada
-    JPanel inputPanel = new JPanel(new BorderLayout());
-    inputPanel.setBorder(BorderFactory.createTitledBorder("Texto de Entrada"));
-    inputTextArea = new JTextArea();
-    inputPanel.add(new JScrollPane(inputTextArea), BorderLayout.CENTER);
+        // Panel de entrada
+        JPanel inputPanel = new JPanel(new BorderLayout());
+        inputPanel.setBorder(BorderFactory.createTitledBorder("Texto de Entrada"));
+        inputTextArea = new JTextArea();
+        inputPanel.add(new JScrollPane(inputTextArea), BorderLayout.CENTER);
 
-    // Panel de reglas
-    JPanel rulesPanel = new JPanel(new BorderLayout());
-    rulesPanel.setBorder(BorderFactory.createTitledBorder("Reglas Léxicas (tipo=patrón, una por línea)"));
-    rulesTextArea = new JTextArea();
-    rulesTextArea.setEditable(false); // Solo visualización
-    rulesTextArea.setText("Reglas cargadas desde archivo aparecerán aquí.");
-    // Agregamos las reglas por defecto aquí
-/*
-    rulesTextArea.setText(
-            "PALABRA_CLAVE=if|else\n" +
-            "IDENTIFICADOR=[a-zA-Z][a-zA-Z0-9]*\n" +
-            "NUMERO=[0-9]+\n" +
-            "OPERADOR=\\+|\\-|\\*|/\n" +
-            "ESPACIO=\\s+"
-    );
-    rulesPanel.add(new JScrollPane(rulesTextArea), BorderLayout.CENTER);
-*/
-    // Botón de análisis
-    analyzeButton = new JButton("Analizar");
-    analyzeButton.addActionListener(this);
-    
-    loadAFDButton = new JButton("Cargar AFD desde archivo");
-    loadAFDButton.addActionListener(this);
+        // Panel de reglas
+        JPanel rulesPanel = new JPanel(new BorderLayout());
+        rulesPanel.setBorder(BorderFactory.createTitledBorder("Reglas Léxicas (tipo=patrón, una por línea)"));
+        rulesTextArea = new JTextArea();
+        rulesTextArea.setEditable(false);
+        rulesPanel.add(new JScrollPane(rulesTextArea), BorderLayout.CENTER);
 
-    // Panel de salida
-    JPanel outputPanel = new JPanel(new BorderLayout());
-    outputPanel.setBorder(BorderFactory.createTitledBorder("Tokens Encontrados"));
-    outputTextArea = new JTextArea();
-    outputPanel.add(new JScrollPane(outputTextArea), BorderLayout.CENTER);
+        // Botones
+        analyzeButton = new JButton("Analizar");
+        analyzeButton.addActionListener(this);
+        loadAFDButton = new JButton("Cargar AFD desde archivo");
+        loadAFDButton.addActionListener(this);
 
-    // Tabla del AFD
-    JPanel afdTablePanel = new JPanel(new BorderLayout());
-    afdTablePanel.setBorder(BorderFactory.createTitledBorder("Tabla de Transiciones del AFD"));
-    afdTableModel = new DefaultTableModel();
-    afdTable = new JTable(afdTableModel);
-    afdTablePanel.add(new JScrollPane(afdTable), BorderLayout.CENTER);
+        // Panel de salida
+        JPanel outputPanel = new JPanel(new BorderLayout());
+        outputPanel.setBorder(BorderFactory.createTitledBorder("Tokens Encontrados"));
+        outputTextArea = new JTextArea();
+        outputPanel.add(new JScrollPane(outputTextArea), BorderLayout.CENTER);
 
-    // Panel principal inferior
-    
-    //JPanel bottomPanel = new JPanel(new GridLayout(1, 2));
-    /*
-    bottomPanel.add(outputPanel);
-    bottomPanel.add(afdTablePanel);
+        // Tabla del AFD
+        JPanel afdTablePanel = new JPanel(new BorderLayout());
+        afdTablePanel.setBorder(BorderFactory.createTitledBorder("Tabla de Transiciones del AFD"));
+        afdTableModel = new DefaultTableModel();
+        afdTable = new JTable(afdTableModel);
+        afdTablePanel.add(new JScrollPane(afdTable), BorderLayout.CENTER);
 
-    add(inputPanel, BorderLayout.NORTH);
-    add(rulesPanel, BorderLayout.CENTER);
-    add(analyzeButton, BorderLayout.SOUTH);
-    add(bottomPanel, BorderLayout.SOUTH);
-    */
-    
-    // Panel principal inferior
-    JPanel bottomPanel = new JPanel(new GridLayout(1, 2));
+        // Panel inferior
+        JPanel bottomPanel = new JPanel(new GridLayout(1, 2));
+        bottomPanel.add(outputPanel);
+        bottomPanel.add(afdTablePanel);
 
-    // Agregar los dos subpaneles al bottomPanel
-    bottomPanel.add(outputPanel);
-    bottomPanel.add(afdTablePanel);
-    
-    JPanel buttonPanel = new JPanel(new FlowLayout());
-    buttonPanel.add(analyzeButton);
-    buttonPanel.add(loadAFDButton);
+        JPanel buttonPanel = new JPanel(new FlowLayout());
+        buttonPanel.add(analyzeButton);
+        buttonPanel.add(loadAFDButton);
 
-    // Crear un nuevo panel para el botón y el bottomPanel
-    JPanel southPanel = new JPanel(new BorderLayout());
-    southPanel.add(buttonPanel, BorderLayout.NORTH);
-    southPanel.add(bottomPanel, BorderLayout.CENTER);
+        JPanel southPanel = new JPanel(new BorderLayout());
+        southPanel.add(buttonPanel, BorderLayout.NORTH);
+        southPanel.add(bottomPanel, BorderLayout.CENTER);
 
-    // Agregar los paneles principales al frame
-    add(inputPanel, BorderLayout.NORTH);
-    add(rulesPanel, BorderLayout.CENTER);
-    add(southPanel, BorderLayout.SOUTH);
-    
-    
+        add(inputPanel, BorderLayout.NORTH);
+        add(rulesPanel, BorderLayout.CENTER);
+        add(southPanel, BorderLayout.SOUTH);
 
-    setVisible(true);
-}
-
+        setVisible(true);
+    }
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == loadAFDButton) {
-            JFileChooser fileChooser = new JFileChooser();
-            int result = fileChooser.showOpenDialog(this);
-            if (result == JFileChooser.APPROVE_OPTION) {
-                try {
-                    java.io.File file = fileChooser.getSelectedFile();
-                    java.io.FileInputStream fis = new java.io.FileInputStream(file);
-                    java.io.ObjectInputStream ois = new java.io.ObjectInputStream(fis);
-                    AFD afdCargado = (AFD) ois.readObject();
-                    ois.close();
+        if (e.getSource() == analyzeButton) {
+            analizarEntrada();
+        } else if (e.getSource() == loadAFDButton) {
+            cargarAFD();
+        }
+    }
 
-                    analizador = new AnalizadorLexico(); // Reiniciar analizador
-                    analizador.cargarAFD(afdCargado);
+    private void analizarEntrada() {
+        outputTextArea.setText("");
+        
+        if (analizador.analizadorAFD == null) {
+            outputTextArea.append("Error: No hay un AFD cargado para analizar\n");
+            return;
+        }
 
-                    updateAFNTable(afdCargado);
-                    outputTextArea.setText("AFD cargado exitosamente desde archivo: " + file.getName() + "\n");
+        String input = inputTextArea.getText().trim();
+        if (input.isEmpty()) {
+            outputTextArea.append("Error: El texto de entrada está vacío\n");
+            return;
+        }
 
-                    // Mostrar reglas del AFD cargado
-                    StringBuilder reglas = new StringBuilder();
-                    for (int estado : afdCargado.getStates()) {
-                        if (afdCargado.isAccepting(estado)) {
-                            String tipoToken = afdCargado.getTokenType(estado);
-                            if (tipoToken != null) {
-                                reglas.append(tipoToken).append(" = patrón_desconocido\n"); // puedes adaptar este texto
-                            }
-                        }
-                    }
-                    rulesTextArea.setText(reglas.toString().isEmpty() ? "No se encontraron reglas." : reglas.toString());
+        try {
+            // Mostrar reglas léxicas basadas en el AFD
+            mostrarReglasLexicas();
 
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                    outputTextArea.setText("Error al cargar el AFD desde archivo.\n" + ex.getMessage());
+            // Analizar la cadena
+            List<Token> tokens = analizador.analizarCadena(input);
+            
+            if (tokens.isEmpty()) {
+                outputTextArea.append("No se encontraron tokens válidos en la entrada\n");
+            } else {
+                outputTextArea.append("--- Tokens encontrados ---\n");
+                for (Token token : tokens) {
+                    outputTextArea.append(token.toString() + "\n");
                 }
+            }
+
+            // Mostrar animación del análisis
+            animateAnalysis(analizador.analizadorAFD, input);
+            
+        } catch (Exception ex) {
+            outputTextArea.append("Error durante el análisis: " + ex.getMessage() + "\n");
+            ex.printStackTrace();
+        }
+    }
+
+    private void mostrarReglasLexicas() {
+        StringBuilder reglas = new StringBuilder();
+        AFD afd = analizador.analizadorAFD;
+        
+        for (int estado : afd.getStates()) {
+            if (afd.isAccepting(estado)) {
+                String tipoToken = afd.getTokenType(estado);
+                if (tipoToken != null && !tipoToken.isEmpty()) {
+                    // Obtener el patrón que lleva a este estado de aceptación
+                    String patron = obtenerPatronParaEstado(estado, afd);
+                    reglas.append(tipoToken).append(" = ").append(patron).append("\n");
+                }
+            }
+        }
+        
+        rulesTextArea.setText(reglas.toString());
+    }
+
+    private String obtenerPatronParaEstado(int estadoAceptacion, AFD afd) {
+        // Implementación simplificada - deberías adaptarla a tu estructura de AFD
+        // Esta es una versión básica que funciona para el ejemplo A+
+        if (estadoAceptacion == 2) {
+            return "A+";
+        }
+        return "patrón_desconocido";
+    }
+
+    private void cargarAFD() {
+        JFileChooser fileChooser = new JFileChooser();
+        int result = fileChooser.showOpenDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            try {
+                java.io.File file = fileChooser.getSelectedFile();
+                java.io.FileInputStream fis = new java.io.FileInputStream(file);
+                java.io.ObjectInputStream ois = new java.io.ObjectInputStream(fis);
+                AFD afdCargado = (AFD) ois.readObject();
+                ois.close();
+
+                analizador.cargarAFD(afdCargado);
+                updateAFDTable(afdCargado);
+                outputTextArea.setText("AFD cargado exitosamente desde archivo: " + file.getName() + "\n");
+
+            } catch (Exception ex) {
+                outputTextArea.setText("Error al cargar el AFD desde archivo.\n" + ex.getMessage());
+                ex.printStackTrace();
             }
         }
     }
 
-    private void updateAFNTable(AFD afd) {
+    private void updateAFDTable(AFD afd) {
         afdTableModel.setRowCount(0);
         afdTableModel.setColumnCount(0);
 

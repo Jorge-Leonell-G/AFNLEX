@@ -247,9 +247,11 @@ public class ThompsonAlgorithm {
 
 
     static AFN constructForPositiveClosure(AFN afn) {
+        AFN afnCopy = afn.clone(); // Asegúrate de tener un método clone() que haga una copia profunda
         AFN afnStar = constructForKleeneStar(afn);
-        return constructForConcatenation(afn, afnStar);
+        return constructForConcatenation(afnCopy, afnStar);
     }
+
 
     static AFN constructForOptional(AFN afn) {
         AFN resultAFN = new AFN();

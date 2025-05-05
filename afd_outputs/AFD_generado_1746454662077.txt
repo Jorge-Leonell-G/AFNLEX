@@ -1,0 +1,11 @@
+--- AFD ---
+Estados: [0, 1, 2, 3, 4]
+Estado de inicio: 0
+Estados de aceptación: [4]
+Tipos de token de aceptación: {4=VOCAL}
+Transiciones:
+  Estado 0 -- 'H' --> 1
+  Estado 1 -- 'O' --> 2
+  Estado 2 -- 'L' --> 3
+  Estado 3 -- 'A' --> 4
+--- Fin AFD ---
