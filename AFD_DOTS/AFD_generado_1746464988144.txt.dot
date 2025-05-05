@@ -1,0 +1,23 @@
+digraph AFD {
+    rankdir=LR;
+    node [shape = circle];
+    0 [shape=doublecircle];
+    1 [shape=doublecircle];
+    2 [shape=doublecircle];
+    3 [shape=doublecircle];
+    4 [shape=doublecircle];
+    start [shape=plaintext,label=""];
+    start -> 0;
+    0 -> 1 [label="A"];
+    0 -> 2 [label="S"];
+    0 -> 3 [label="C"];
+    0 -> 4 [label="D"];
+    2 -> 1 [label="A"];
+    2 -> 2 [label="S"];
+    2 -> 3 [label="C"];
+    2 -> 4 [label="D"];
+    3 -> 1 [label="A"];
+    3 -> 2 [label="S"];
+    3 -> 3 [label="C"];
+    3 -> 4 [label="D"];
+}

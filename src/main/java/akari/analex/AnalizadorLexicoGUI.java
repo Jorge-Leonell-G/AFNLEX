@@ -111,27 +111,32 @@ public class AnalizadorLexicoGUI extends JFrame implements ActionListener {
     }
 
     private JPanel crearPanelAnimacion() {
-        JPanel panel = new JPanel(new BorderLayout());
-        
-        // Panel para la cinta de animación
-        cintaPanel = new JPanel();
-        cintaPanel.setBorder(BorderFactory.createTitledBorder("Animación en Tiempo Real"));
-        cintaPanel.setLayout(new BoxLayout(cintaPanel, BoxLayout.X_AXIS));
-        
-        // Botón para regresar
-        volverButton = new JButton("Regresar a GUI Principal");
-        volverButton.addActionListener(e -> {
-            if (animationTimer != null) {
-                animationTimer.stop();
-            }
-            cardLayout.show(mainPanel, "principal");
-        });
-        
-        panel.add(new JScrollPane(cintaPanel), BorderLayout.CENTER);
-        panel.add(volverButton, BorderLayout.SOUTH);
-        
-        return panel;
-    }
+    JPanel panel = new JPanel(new BorderLayout());
+    
+    // Panel para la cinta de animación (ahora más pequeño)
+    cintaPanel = new JPanel();
+    cintaPanel.setBorder(BorderFactory.createTitledBorder("Animación en Tiempo Real"));
+    cintaPanel.setLayout(new BoxLayout(cintaPanel, BoxLayout.X_AXIS));
+    cintaPanel.setPreferredSize(new Dimension(600, 50)); // Tamaño reducido
+    
+    // Botón para regresar
+    volverButton = new JButton("Regresar a GUI Principal");
+    volverButton.addActionListener(e -> {
+        if (animationTimer != null) {
+            animationTimer.stop();
+        }
+        cardLayout.show(mainPanel, "principal");
+    });
+    
+    // Panel contenedor para mejor organización
+    JPanel contentPanel = new JPanel(new BorderLayout());
+    contentPanel.add(new JScrollPane(cintaPanel), BorderLayout.CENTER);
+    contentPanel.add(volverButton, BorderLayout.SOUTH);
+    
+    panel.add(contentPanel, BorderLayout.CENTER);
+    
+    return panel;
+}
 
     @Override
     public void actionPerformed(ActionEvent e) {
@@ -423,7 +428,7 @@ public class AnalizadorLexicoGUI extends JFrame implements ActionListener {
             
             JPanel charPanel = new JPanel(new BorderLayout());
             charPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
-            charPanel.setPreferredSize(new Dimension(40, 40));
+            charPanel.setPreferredSize(new Dimension(30, 30));
             
             JLabel charLabel = new JLabel(String.valueOf(currentChar), SwingConstants.CENTER);
             charLabel.setFont(new Font("Monospaced", Font.BOLD, 14));
