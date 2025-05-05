@@ -6,33 +6,54 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
+import java.io.FileInputStream;
+import java.io.ObjectInputStream;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
-import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.Timer;
 
 public class AnalizadorLexicoGUI extends JFrame implements ActionListener {
 
     private JTextArea inputTextArea;
     private JTextArea rulesTextArea;
-    private final JTextArea outputTextArea;
+    private JTextArea outputTextArea;
     private JTable afdTable;
     private DefaultTableModel afdTableModel;
     private JButton analyzeButton;
     private AnalizadorLexico analizador;
     private JButton loadAFDButton;
+    private JButton animacionButton;
+    private JButton volverButton;
+    private CardLayout cardLayout;
+    private JPanel mainPanel;
+    private JPanel animacionPanel;
+    private JPanel cintaPanel;
+    private Timer animationTimer;
+    private int currentAnimationIndex;
 
     public AnalizadorLexicoGUI() {
         super("Analizador Léxico con AFD");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(800, 600);
-        setLayout(new BorderLayout());
+        setSize(900, 700);
 
         analizador = new AnalizadorLexico();
+        cardLayout = new CardLayout();
+        mainPanel = new JPanel(cardLayout);
+
+        // Panel principal
+        JPanel guiPrincipal = crearPanelPrincipal();
+        mainPanel.add(guiPrincipal, "principal");
+
+        // Panel de animación
+        animacionPanel = crearPanelAnimacion();
+        mainPanel.add(animacionPanel, "animacion");
+
+        add(mainPanel);
+        setVisible(true);
+    }
+
+    private JPanel crearPanelPrincipal() {
+        JPanel panel = new JPanel(new BorderLayout());
 
         // Panel de entrada
         JPanel inputPanel = new JPanel(new BorderLayout());
@@ -52,6 +73,8 @@ public class AnalizadorLexicoGUI extends JFrame implements ActionListener {
         analyzeButton.addActionListener(this);
         loadAFDButton = new JButton("Cargar AFD desde archivo");
         loadAFDButton.addActionListener(this);
+        animacionButton = new JButton("Mostrar cinta de animación");
+        animacionButton.addActionListener(this);
 
         // Panel de salida
         JPanel outputPanel = new JPanel(new BorderLayout());
@@ -74,16 +97,40 @@ public class AnalizadorLexicoGUI extends JFrame implements ActionListener {
         JPanel buttonPanel = new JPanel(new FlowLayout());
         buttonPanel.add(analyzeButton);
         buttonPanel.add(loadAFDButton);
+        buttonPanel.add(animacionButton);
 
         JPanel southPanel = new JPanel(new BorderLayout());
         southPanel.add(buttonPanel, BorderLayout.NORTH);
         southPanel.add(bottomPanel, BorderLayout.CENTER);
 
-        add(inputPanel, BorderLayout.NORTH);
-        add(rulesPanel, BorderLayout.CENTER);
-        add(southPanel, BorderLayout.SOUTH);
+        panel.add(inputPanel, BorderLayout.NORTH);
+        panel.add(rulesPanel, BorderLayout.CENTER);
+        panel.add(southPanel, BorderLayout.SOUTH);
 
-        setVisible(true);
+        return panel;
+    }
+
+    private JPanel crearPanelAnimacion() {
+        JPanel panel = new JPanel(new BorderLayout());
+        
+        // Panel para la cinta de animación
+        cintaPanel = new JPanel();
+        cintaPanel.setBorder(BorderFactory.createTitledBorder("Animación en Tiempo Real"));
+        cintaPanel.setLayout(new BoxLayout(cintaPanel, BoxLayout.X_AXIS));
+        
+        // Botón para regresar
+        volverButton = new JButton("Regresar a GUI Principal");
+        volverButton.addActionListener(e -> {
+            if (animationTimer != null) {
+                animationTimer.stop();
+            }
+            cardLayout.show(mainPanel, "principal");
+        });
+        
+        panel.add(new JScrollPane(cintaPanel), BorderLayout.CENTER);
+        panel.add(volverButton, BorderLayout.SOUTH);
+        
+        return panel;
     }
 
     @Override
@@ -92,50 +139,52 @@ public class AnalizadorLexicoGUI extends JFrame implements ActionListener {
             analizarEntrada();
         } else if (e.getSource() == loadAFDButton) {
             cargarAFD();
+        } else if (e.getSource() == animacionButton) {
+            if (analizador.analizadorAFD != null && !inputTextArea.getText().isEmpty()) {
+                mostrarAnimacionCompleta(analizador.analizadorAFD, inputTextArea.getText());
+            } else {
+                JOptionPane.showMessageDialog(this, 
+                    "Primero cargue un AFD e ingrese texto para analizar",
+                    "Advertencia", JOptionPane.WARNING_MESSAGE);
+            }
         }
     }
 
     private void analizarEntrada() {
-    // Limpiar completamente el área de salida
-    outputTextArea.setText("");
-    
-    if (analizador.analizadorAFD == null) {
-        outputTextArea.append("Error: No hay un AFD cargado para analizar\n");
-        return;
-    }
-
-    String input = inputTextArea.getText().trim();
-    if (input.isEmpty()) {
-        outputTextArea.append("Error: El texto de entrada está vacío\n");
-        return;
-    }
-
-    try {
-        // Mostrar reglas léxicas basadas en el AFD actual
-        mostrarReglasLexicas();
-
-        // Analizar la cadena (esto ahora es independiente de la animación)
-        List<Token> tokens = analizador.analizarCadena(input);
+        outputTextArea.setText("");
         
-        // Mostrar tokens encontrados
-        if (tokens.isEmpty()) {
-            outputTextArea.append("No se encontraron tokens válidos en la entrada\n");
-        } else {
-            outputTextArea.append("--- Tokens encontrados ---\n");
-            for (Token token : tokens) {
-                outputTextArea.append(token.toString() + "\n");
-            }
-            outputTextArea.append("\n"); // Espacio antes de la animación
+        if (analizador.analizadorAFD == null) {
+            outputTextArea.append("Error: No hay un AFD cargado para analizar\n");
+            return;
         }
 
-        // Mostrar animación del análisis (con el AFD actual)
-        animateAnalysis(analizador.analizadorAFD, input);
-        
-    } catch (Exception ex) {
-        outputTextArea.append("Error durante el análisis: " + ex.getMessage() + "\n");
-        ex.printStackTrace();
+        String input = inputTextArea.getText().trim();
+        if (input.isEmpty()) {
+            outputTextArea.append("Error: El texto de entrada está vacío\n");
+            return;
+        }
+
+        try {
+            mostrarReglasLexicas();
+            List<Token> tokens = analizador.analizarCadena(input);
+            
+            if (tokens.isEmpty()) {
+                outputTextArea.append("No se encontraron tokens válidos en la entrada\n");
+            } else {
+                outputTextArea.append("--- Tokens encontrados ---\n");
+                for (Token token : tokens) {
+                    outputTextArea.append(token.toString() + "\n");
+                }
+                outputTextArea.append("\n");
+            }
+
+            animateAnalysis(analizador.analizadorAFD, input);
+            
+        } catch (Exception ex) {
+            outputTextArea.append("Error durante el análisis: " + ex.getMessage() + "\n");
+            ex.printStackTrace();
+        }
     }
-}
 
     private void mostrarReglasLexicas() {
         StringBuilder reglas = new StringBuilder();
@@ -145,7 +194,6 @@ public class AnalizadorLexicoGUI extends JFrame implements ActionListener {
             if (afd.isAccepting(estado)) {
                 String tipoToken = afd.getTokenType(estado);
                 if (tipoToken != null && !tipoToken.isEmpty()) {
-                    // Obtener el patrón que lleva a este estado de aceptación
                     String patron = obtenerPatronParaEstado(estado, afd);
                     reglas.append(tipoToken).append(" = ").append(patron).append("\n");
                 }
@@ -155,120 +203,104 @@ public class AnalizadorLexicoGUI extends JFrame implements ActionListener {
         rulesTextArea.setText(reglas.toString());
     }
 
-    
     private String obtenerPatronParaEstado(int estadoAceptacion, AFD afd) {
-    // Verificar si el estado es válido
-    if (!afd.getStates().contains(estadoAceptacion) || !afd.isAccepting(estadoAceptacion)) {
-        return "estado_no_aceptacion";
-    }
+        if (!afd.getStates().contains(estadoAceptacion) || !afd.isAccepting(estadoAceptacion)) {
+            return "estado_no_aceptacion";
+        }
 
-    // Caso especial para estado inicial que sea de aceptación
-    if (estadoAceptacion == afd.getStartState()) {
-        return "ε"; // Cadena vacía
-    }
+        if (estadoAceptacion == afd.getStartState()) {
+            return "ε";
+        }
 
-    // Reconstruir el patrón mediante búsqueda en anchura inversa
-    Map<Integer, String> patrones = new HashMap<>();
-    Queue<Integer> cola = new LinkedList<>();
-    Set<Integer> visitados = new HashSet<>();
+        Map<Integer, String> patrones = new HashMap<>();
+        Queue<Integer> cola = new LinkedList<>();
+        Set<Integer> visitados = new HashSet<>();
 
-    // Inicializar con el estado de aceptación
-    cola.add(estadoAceptacion);
-    patrones.put(estadoAceptacion, "");
-    visitados.add(estadoAceptacion);
+        cola.add(estadoAceptacion);
+        patrones.put(estadoAceptacion, "");
+        visitados.add(estadoAceptacion);
 
-    while (!cola.isEmpty()) {
-        int estadoActual = cola.poll();
-        String patronActual = patrones.get(estadoActual);
+        while (!cola.isEmpty()) {
+            int estadoActual = cola.poll();
+            String patronActual = patrones.get(estadoActual);
 
-        // Buscar todos los estados que llevan al estado actual
-        for (int estadoOrigen : afd.getStates()) {
-            Map<Character, Integer> transiciones = afd.getTransitions(estadoOrigen);
-            if (transiciones != null) {
-                for (Map.Entry<Character, Integer> trans : transiciones.entrySet()) {
-                    if (trans.getValue() == estadoActual && !visitados.contains(estadoOrigen)) {
-                        String nuevoPatron = trans.getKey() + patronActual;
-                        
-                        // Si llegamos al estado inicial, retornamos el patrón completo
-                        if (estadoOrigen == afd.getStartState()) {
-                            return nuevoPatron;
+            for (int estadoOrigen : afd.getStates()) {
+                Map<Character, Integer> transiciones = afd.getTransitions(estadoOrigen);
+                if (transiciones != null) {
+                    for (Map.Entry<Character, Integer> trans : transiciones.entrySet()) {
+                        if (trans.getValue() == estadoActual && !visitados.contains(estadoOrigen)) {
+                            String nuevoPatron = trans.getKey() + patronActual;
+                            
+                            if (estadoOrigen == afd.getStartState()) {
+                                return nuevoPatron;
+                            }
+                            
+                            patrones.put(estadoOrigen, nuevoPatron);
+                            cola.add(estadoOrigen);
+                            visitados.add(estadoOrigen);
                         }
-                        
-                        // Almacenar el nuevo patrón y continuar la búsqueda
-                        patrones.put(estadoOrigen, nuevoPatron);
-                        cola.add(estadoOrigen);
-                        visitados.add(estadoOrigen);
                     }
                 }
             }
         }
-    }
 
-    // Si no se encontró un camino al estado inicial, buscar el patrón más corto
-    String patronMasCorto = null;
-    for (Map.Entry<Integer, String> entry : patrones.entrySet()) {
-        if (patronMasCorto == null || entry.getValue().length() < patronMasCorto.length()) {
-            patronMasCorto = entry.getValue();
-        }
-    }
-
-    return patronMasCorto != null ? patronMasCorto : "patrón_no_reconocido";
-}
-
-    private void cargarAFD() {
-    JFileChooser fileChooser = new JFileChooser();
-    
-    // Configurar ruta predefinida específica
-    try {
-        String rutaPredefinida = "C:\\Users\\leone\\Documents\\Netbeans Projects\\AnaLex\\afd_outputs_no_format";
-        File dirPredefinido = new File(rutaPredefinida);
-        
-        // Si la carpeta no existe, intentar crearla
-        if (!dirPredefinido.exists()) {
-            boolean creado = dirPredefinido.mkdirs();
-            if (!creado) {
-                outputTextArea.append("Advertencia: No se pudo crear la carpeta especificada. Usando directorio por defecto.\n");
+        String patronMasCorto = null;
+        for (Map.Entry<Integer, String> entry : patrones.entrySet()) {
+            if (patronMasCorto == null || entry.getValue().length() < patronMasCorto.length()) {
+                patronMasCorto = entry.getValue();
             }
         }
+
+        return patronMasCorto != null ? patronMasCorto : "patrón_no_reconocido";
+    }
+
+    private void cargarAFD() {
+        JFileChooser fileChooser = new JFileChooser();
         
-        // Verificar nuevamente si existe después de intentar crearla
-        if (dirPredefinido.exists()) {
-            fileChooser.setCurrentDirectory(dirPredefinido);
-        } else {
-            outputTextArea.append("Advertencia: La ruta especificada no existe. Usando directorio por defecto.\n");
-        }
-    } catch (Exception e) {
-        outputTextArea.append("Advertencia: No se pudo establecer la ruta predefinida. Usando directorio por defecto.\n");
-    }
-    
-    int result = fileChooser.showOpenDialog(this);
-    if (result == JFileChooser.APPROVE_OPTION) {
         try {
-            java.io.File file = fileChooser.getSelectedFile();
-            java.io.FileInputStream fis = new java.io.FileInputStream(file);
-            java.io.ObjectInputStream ois = new java.io.ObjectInputStream(fis);
-            AFD afdCargado = (AFD) ois.readObject();
-            ois.close();
+            String rutaPredefinida = "C:\\Users\\leone\\Documents\\Netbeans Projects\\AnaLex\\afd_outputs_no_format";
+            File dirPredefinido = new File(rutaPredefinida);
+            
+            if (!dirPredefinido.exists()) {
+                boolean creado = dirPredefinido.mkdirs();
+                if (!creado) {
+                    outputTextArea.append("Advertencia: No se pudo crear la carpeta especificada. Usando directorio por defecto.\n");
+                }
+            }
+            
+            if (dirPredefinido.exists()) {
+                fileChooser.setCurrentDirectory(dirPredefinido);
+            } else {
+                outputTextArea.append("Advertencia: La ruta especificada no existe. Usando directorio por defecto.\n");
+            }
+        } catch (Exception e) {
+            outputTextArea.append("Advertencia: No se pudo establecer la ruta predefinida. Usando directorio por defecto.\n");
+        }
+        
+        int result = fileChooser.showOpenDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            try {
+                File file = fileChooser.getSelectedFile();
+                AFD afdCargado = cargarAFDDesdeArchivo(file);
 
-            // Limpiar el área de salida al cargar nuevo AFD
-            outputTextArea.setText("");
-            
-            // Cargar el nuevo AFD
-            analizador.cargarAFD(afdCargado);
-            updateAFDTable(afdCargado);
-            
-            // Mostrar mensaje de éxito
-            outputTextArea.setText("AFD cargado exitosamente desde archivo: " + file.getName() + "\n");
-            
-            // Actualizar reglas léxicas mostradas
-            mostrarReglasLexicas();
+                outputTextArea.setText("");
+                analizador.cargarAFD(afdCargado);
+                updateAFDTable(afdCargado);
+                outputTextArea.setText("AFD cargado exitosamente desde archivo: " + file.getName() + "\n");
+                mostrarReglasLexicas();
 
-        } catch (Exception ex) {
-            outputTextArea.setText("Error al cargar el AFD desde archivo.\n" + ex.getMessage());
-            ex.printStackTrace();
+            } catch (Exception ex) {
+                outputTextArea.setText("Error al cargar el AFD desde archivo.\n" + ex.getMessage());
+                ex.printStackTrace();
+            }
         }
     }
-}
+
+    private AFD cargarAFDDesdeArchivo(File file) throws Exception {
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
+            return (AFD) ois.readObject();
+        }
+    }
 
     private void updateAFDTable(AFD afd) {
         afdTableModel.setRowCount(0);
@@ -279,16 +311,15 @@ public class AnalizadorLexicoGUI extends JFrame implements ActionListener {
             return;
         }
 
-        Set<Integer> states = afd.getStates();
-        Set<Character> alphabet = new java.util.HashSet<>();
-        for (int state : states) {
+        Set<Character> alphabet = new HashSet<>();
+        for (int state : afd.getStates()) {
             Map<Character, Integer> transitions = afd.getTransitions(state);
             if (transitions != null) {
                 alphabet.addAll(transitions.keySet());
             }
         }
-        java.util.List<Character> sortedAlphabet = new java.util.ArrayList<>(alphabet);
-        java.util.Collections.sort(sortedAlphabet);
+        List<Character> sortedAlphabet = new ArrayList<>(alphabet);
+        Collections.sort(sortedAlphabet);
 
         afdTableModel.addColumn("Estado");
         for (char symbol : sortedAlphabet) {
@@ -297,8 +328,8 @@ public class AnalizadorLexicoGUI extends JFrame implements ActionListener {
         afdTableModel.addColumn("Aceptación");
         afdTableModel.addColumn("Tipo");
 
-        java.util.List<Integer> sortedStates = new java.util.ArrayList<>(states);
-        java.util.Collections.sort(sortedStates);
+        List<Integer> sortedStates = new ArrayList<>(afd.getStates());
+        Collections.sort(sortedStates);
 
         for (int state : sortedStates) {
             Object[] row = new Object[sortedAlphabet.size() + 3];
@@ -306,11 +337,7 @@ public class AnalizadorLexicoGUI extends JFrame implements ActionListener {
             Map<Character, Integer> transitions = afd.getTransitions(state);
             for (int i = 0; i < sortedAlphabet.size(); i++) {
                 char symbol = sortedAlphabet.get(i);
-                if (transitions != null && transitions.containsKey(symbol)) {
-                    row[i + 1] = transitions.get(symbol);
-                } else {
-                    row[i + 1] = "";
-                }
+                row[i + 1] = (transitions != null && transitions.containsKey(symbol)) ? transitions.get(symbol) : "";
             }
             row[sortedAlphabet.size() + 1] = afd.isAccepting(state) ? "Sí" : "No";
             row[sortedAlphabet.size() + 2] = afd.getTokenType(state) != null ? afd.getTokenType(state) : "";
@@ -319,59 +346,136 @@ public class AnalizadorLexicoGUI extends JFrame implements ActionListener {
     }
 
     private void animateAnalysis(AFD afd, String input) {
-    if (afd == null || input.isEmpty()) {
-        return;
+        if (afd == null || input.isEmpty()) {
+            return;
+        }
+
+        outputTextArea.append("--- Animación del Análisis ---\n");
+        outputTextArea.setCaretPosition(outputTextArea.getDocument().getLength());
+
+        new Thread(() -> {
+            int currentState = afd.getStartState();
+            int position = 0;
+            
+            while (position < input.length()) {
+                char currentChar = input.charAt(position);
+                int nextState = afd.getNextState(currentState, currentChar);
+                
+                // Crear variables locales efectivamente finales
+                final char charToPrint = currentChar;
+                final int stateToPrint = currentState;
+
+                SwingUtilities.invokeLater(() -> {
+                    outputTextArea.append("Carácter: '" + charToPrint + 
+                                       "', Estado actual: " + stateToPrint);
+                    
+                    if (nextState != -1) {
+                        outputTextArea.append(" -> Estado siguiente: " + nextState + "\n");
+                    } else {
+                        outputTextArea.append(" -> No hay transición para '" + currentChar + "'\n");
+                    }
+                    outputTextArea.setCaretPosition(outputTextArea.getDocument().getLength());
+                });
+
+                if (nextState != -1) {
+                    currentState = nextState;
+                    position++;
+                } else {
+                    position++;
+                }
+
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+            }
+            
+            SwingUtilities.invokeLater(() -> {
+                outputTextArea.append("--- Fin de la Animación ---\n");
+                outputTextArea.setCaretPosition(outputTextArea.getDocument().getLength());
+            });
+        }).start();
     }
 
-    // Limpiar cualquier animación previa y comenzar nueva
-    outputTextArea.append("--- Animación del Análisis ---\n");
-    outputTextArea.setCaretPosition(outputTextArea.getDocument().getLength());
-
-    new Thread(() -> {
-        int currentState = afd.getStartState();
-        int position = 0;
-        
-        while (position < input.length()) {
-            char currentChar = input.charAt(position);
-            int nextState = afd.getNextState(currentState, currentChar);
-
-            // Crear variables efectivamente finales
-            final char charToPrint = currentChar;
-            final int stateToPrint = currentState;
-
-            SwingUtilities.invokeLater(() -> {
-                outputTextArea.append("Carácter: '" + charToPrint +
-                          "', Estado actual: " + stateToPrint + "\n");
-                if (nextState != -1) {
-                    outputTextArea.append(" -> Estado siguiente: " + nextState + "\n");
-                } else {
-                    outputTextArea.append(" -> No hay transición para '" + currentChar + "'\n");
-                }
-                outputTextArea.setCaretPosition(outputTextArea.getDocument().getLength());
-        });     
-
-            if (nextState != -1) {
-                currentState = nextState;
-                position++;
-            } else {
-                // Carácter no reconocido - avanzar de todos modos
-                position++;
-            }
-
-            try {
-                Thread.sleep(500); // Pausa para la animación
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return;
-            }
+    private void mostrarAnimacionCompleta(AFD afd, String input) {
+        if (animationTimer != null) {
+            animationTimer.stop();
         }
         
-        SwingUtilities.invokeLater(() -> {
-            outputTextArea.append("--- Fin de la Animación ---\n");
-            outputTextArea.setCaretPosition(outputTextArea.getDocument().getLength());
+        cintaPanel.removeAll();
+        cintaPanel.setLayout(new BoxLayout(cintaPanel, BoxLayout.X_AXIS));
+        
+        if (afd == null || input == null || input.isEmpty()) {
+            cintaPanel.add(new JLabel("No hay datos para mostrar"));
+            cintaPanel.revalidate();
+            cintaPanel.repaint();
+            return;
+        }
+        
+        List<JPanel> elementosAnimacion = new ArrayList<>();
+        int currentState = afd.getStartState();
+        
+        for (int i = 0; i < input.length(); i++) {
+            char currentChar = input.charAt(i);
+            int nextState = afd.getNextState(currentState, currentChar);
+            
+            JPanel charPanel = new JPanel(new BorderLayout());
+            charPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+            charPanel.setPreferredSize(new Dimension(40, 40));
+            
+            JLabel charLabel = new JLabel(String.valueOf(currentChar), SwingConstants.CENTER);
+            charLabel.setFont(new Font("Monospaced", Font.BOLD, 14));
+            
+            Color bgColor;
+            if (nextState == -1) {
+                bgColor = Color.RED;
+                charLabel.setForeground(Color.WHITE);
+            } else if (afd.isAccepting(nextState)) {
+                bgColor = Color.GREEN;
+            } else {
+                bgColor = Color.YELLOW;
+            }
+            charPanel.setBackground(bgColor);
+            charPanel.add(charLabel, BorderLayout.CENTER);
+            
+            JLabel stateLabel = new JLabel("q"+currentState, SwingConstants.CENTER);
+            stateLabel.setFont(new Font("SansSerif", Font.PLAIN, 10));
+            charPanel.add(stateLabel, BorderLayout.SOUTH);
+            
+            elementosAnimacion.add(charPanel);
+            currentState = nextState != -1 ? nextState : afd.getStartState();
+        }
+        
+        // Añadir todos los elementos al panel
+        for (JPanel panel : elementosAnimacion) {
+            cintaPanel.add(panel);
+        }
+        
+        // Configurar la animación
+        currentAnimationIndex = 0;
+        animationTimer = new Timer(500, e -> {
+            if (currentAnimationIndex > 0) {
+                elementosAnimacion.get(currentAnimationIndex-1).setBackground(
+                    elementosAnimacion.get(currentAnimationIndex-1).getBackground().darker());
+            }
+            
+            if (currentAnimationIndex < elementosAnimacion.size()) {
+                elementosAnimacion.get(currentAnimationIndex).setBackground(Color.CYAN);
+                currentAnimationIndex++;
+            } else {
+                animationTimer.stop();
+            }
+            cintaPanel.revalidate();
+            cintaPanel.repaint();
         });
-    }).start();
-}
+        
+        cintaPanel.revalidate();
+        cintaPanel.repaint();
+        cardLayout.show(mainPanel, "animacion");
+        animationTimer.start();
+    }
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new AnalizadorLexicoGUI());
