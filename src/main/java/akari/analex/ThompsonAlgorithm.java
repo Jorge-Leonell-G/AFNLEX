@@ -17,102 +17,104 @@ import java.util.Stack;
 public class ThompsonAlgorithm {
 
     static AFN constructForSymbol(AFN afn, char symbol, String tokenType) {
-        State startState = afn.createState();
-        State acceptState = afn.createState();
-        afn.addTransition(startState.getId(), symbol, acceptState.getId());
-        afn.setStartState(startState.getId());
-        afn.addAcceptingState(acceptState.getId());
-        if (tokenType != null) {
-            //afn.getState(acceptState.getId()).setTokenType(tokenType);
-            State state = afn.getState(acceptState.getId());
-            state.setTokenType(tokenType);
-            afn.tokenTypes.put(acceptState.getId(), tokenType);
-        }
-        return afn;
+    State startState = afn.createState();
+    State acceptState = afn.createState();
+    afn.addTransition(startState.getId(), symbol, acceptState.getId());
+    afn.setStartState(startState.getId());
+    afn.addAcceptingState(acceptState.getId());
+    if (tokenType != null) {
+        State state = afn.getState(acceptState.getId());
+        state.setTokenType(tokenType);
+        afn.tokenTypes.put(acceptState.getId(), tokenType);
     }
+    return afn;
+}
 
     static AFN constructForConcatenation(AFN afn1, AFN afn2) {
     AFN resultAFN = new AFN();
-
-    // Mapear y copiar estados de afn1
+    
+    // 1. Mapeo y copia de estados de afn1
     Map<Integer, Integer> afn1StateMap = new HashMap<>();
     for (State state : afn1.getStates().values()) {
-        State newState = resultAFN.createState();
-        afn1StateMap.put(state.getId(), newState.getId());
-        if (afn1.getStartState() == state.getId()) {
-            resultAFN.setStartState(newState.getId());
-        }
-        if (afn1.getAcceptingStates().contains(state.getId())) {
-            // Agregaremos transiciones epsilon luego, no conservar como aceptante aquí
-            // pero marcamos como aceptante temporalmente para identificarlo después
-            resultAFN.addAcceptingState(newState.getId());
+        int newStateId = resultAFN.createState().getId();
+        afn1StateMap.put(state.getId(), newStateId);
+        
+        // Establecer estado inicial
+        if (state.getId() == afn1.getStartState()) {
+            resultAFN.setStartState(newStateId);
         }
     }
-
-    // Copiar transiciones de afn1
+    
+    // 2. Mapeo y copia de estados de afn2
+    Map<Integer, Integer> afn2StateMap = new HashMap<>();
+    int afn2StartInResult = -1;
+    for (State state : afn2.getStates().values()) {
+        int newStateId = resultAFN.createState().getId();
+        afn2StateMap.put(state.getId(), newStateId);
+        
+        if (state.getId() == afn2.getStartState()) {
+            afn2StartInResult = newStateId;
+        }
+    }
+    
+    // 3. Copiar todas las transiciones de afn1
     for (State state : afn1.getStates().values()) {
         int from = afn1StateMap.get(state.getId());
+        
+        // Transiciones de símbolos
         for (Map.Entry<Character, Set<Integer>> entry : state.getTransitions().entrySet()) {
             for (int to : entry.getValue()) {
                 resultAFN.addTransition(from, entry.getKey(), afn1StateMap.get(to));
             }
         }
+        
+        // Transiciones épsilon
         for (int to : state.getEpsilonTransitions()) {
             resultAFN.addEpsilonTransition(from, afn1StateMap.get(to));
         }
     }
-
-    // Mapear y copiar estados de afn2
-    Map<Integer, Integer> afn2StateMap = new HashMap<>();
-    for (State state : afn2.getStates().values()) {
-        State newState = resultAFN.createState();
-        afn2StateMap.put(state.getId(), newState.getId());
-    }
-
-    // Copiar transiciones de afn2
+    
+    // 4. Copiar todas las transiciones de afn2
     for (State state : afn2.getStates().values()) {
         int from = afn2StateMap.get(state.getId());
+        
+        // Transiciones de símbolos
         for (Map.Entry<Character, Set<Integer>> entry : state.getTransitions().entrySet()) {
             for (int to : entry.getValue()) {
                 resultAFN.addTransition(from, entry.getKey(), afn2StateMap.get(to));
             }
         }
+        
+        // Transiciones épsilon
         for (int to : state.getEpsilonTransitions()) {
             resultAFN.addEpsilonTransition(from, afn2StateMap.get(to));
         }
     }
-
-    // Conectar los estados de aceptación de afn1 con el estado inicial de afn2
-    int afn2Start = afn2StateMap.get(afn2.getStartState());
-    for (int oldAccepting : new HashSet<>(resultAFN.getAcceptingStates())) {
-        resultAFN.getState(oldAccepting).setAccepting(false);
-        resultAFN.addEpsilonTransition(oldAccepting, afn2Start);
+    
+    // 5. Conectar estados de aceptación de afn1 al inicio de afn2
+    for (int acceptState : afn1.getAcceptingStates()) {
+        resultAFN.addEpsilonTransition(
+            afn1StateMap.get(acceptState),
+            afn2StartInResult
+        );
     }
-
-    // Establecer nuevos estados de aceptación (desde afn2)
-    Set<Integer> newAcceptingStates = new HashSet<>();
-    for (int originalAcceptId : afn2.getAcceptingStates()) {
-        int mappedId = afn2StateMap.get(originalAcceptId);
-        resultAFN.addAcceptingState(mappedId);
-
-        // Copiar tokenType
-        String tokenType = afn2.getState(originalAcceptId).getTokenType();
+    
+    // 6. Establecer estados de aceptación (solo los de afn2)
+    for (int acceptState : afn2.getAcceptingStates()) {
+        int mappedAccept = afn2StateMap.get(acceptState);
+        resultAFN.addAcceptingState(mappedAccept);
+        
+        // Copiar tokentype manteniendo consistencia
+        String tokenType = afn2.getState(acceptState).getTokenType();
+        
         if (tokenType != null) {
-            resultAFN.getState(mappedId).setTokenType(tokenType);
+            resultAFN.getState(mappedAccept).setTokenType(tokenType); // Forzar consistencia
         }
-        newAcceptingStates.add(mappedId);
+        
     }
-
-    resultAFN.acceptingStates = newAcceptingStates;
-
-    System.out.println("--- Debug: Tokens en estados de aceptación ---");
-    for (int id : resultAFN.getAcceptingStates()) {
-        System.out.println("Estado " + id + " => Token: " + resultAFN.getState(id).getTokenType());
-    }
-
+    
     return resultAFN;
 }
-
 
     static AFN constructForUnion(AFN afn1, AFN afn2) {
         AFN resultAFN = new AFN();
@@ -244,163 +246,245 @@ public class ThompsonAlgorithm {
 
     return resultAFN;
 }
-
-
+/*
     static AFN constructForPositiveClosure(AFN afn) {
         AFN afnCopy = afn.clone(); // Asegúrate de tener un método clone() que haga una copia profunda
         AFN afnStar = constructForKleeneStar(afn);
         return constructForConcatenation(afnCopy, afnStar);
     }
+*/
+   static AFN constructForPositiveClosure(AFN afn) {
+    AFN resultAFN = new AFN();
+    
+    // Crear nuevo estado inicial y de aceptación
+    State newStart = resultAFN.createState();
+    State newAccept = resultAFN.createState();
+    resultAFN.setStartState(newStart.getId());
+    resultAFN.addAcceptingState(newAccept.getId());
 
+    // Mapear estados originales
+    Map<Integer, Integer> stateMap = new HashMap<>();
+    for (State state : afn.getStates().values()) {
+        int newId = resultAFN.createState().getId();
+        stateMap.put(state.getId(), newId);
+    }
+
+    // Conectar nuevo inicio al inicio original
+    resultAFN.addEpsilonTransition(newStart.getId(), stateMap.get(afn.getStartState()));
+
+    // Copiar todas las transiciones del AFN original
+    for (State state : afn.getStates().values()) {
+        int from = stateMap.get(state.getId());
+        
+        // Copiar transiciones de símbolos
+        for (Map.Entry<Character, Set<Integer>> entry : state.getTransitions().entrySet()) {
+            for (int to : entry.getValue()) {
+                resultAFN.addTransition(from, entry.getKey(), stateMap.get(to));
+            }
+        }
+        
+        // Copiar transiciones épsilon
+        for (int to : state.getEpsilonTransitions()) {
+            resultAFN.addEpsilonTransition(from, stateMap.get(to));
+        }
+        
+        // Conectar estados de aceptación originales al nuevo aceptación y al inicio original
+        if (afn.getAcceptingStates().contains(state.getId())) {
+            resultAFN.addEpsilonTransition(from, newAccept.getId());
+            resultAFN.addEpsilonTransition(from, stateMap.get(afn.getStartState()));
+        }
+    }
+
+    // Copiar token del primer estado de aceptación original
+    for (int oldAccept : afn.getAcceptingStates()) {
+        String tokenType = afn.getState(oldAccept).getTokenType();
+        if (tokenType != null) {
+            resultAFN.getState(newAccept.getId()).setTokenType(tokenType);
+            break;
+        }
+    }
+
+    return resultAFN;
+}
 
     static AFN constructForOptional(AFN afn) {
-        AFN resultAFN = new AFN();
-        State startState = resultAFN.createState();
-        State acceptState = resultAFN.createState();
-
-        resultAFN.setStartState(startState.getId());
-        resultAFN.addAcceptingState(acceptState.getId());
-
-        Map<Integer, Integer> stateMap = new HashMap<>();
-        for (State state : afn.getStates().values()) {
-            stateMap.put(state.getId(), resultAFN.createState().getId());
-
-            if (afn.getStartState() == state.getId()) {
-                resultAFN.addEpsilonTransition(startState.getId(), stateMap.get(state.getId()));
-            }
-            if (afn.getAcceptingStates().contains(state.getId())) {
-                int mappedAcceptStateId = stateMap.get(state.getId());
-                resultAFN.addEpsilonTransition(mappedAcceptStateId, acceptState.getId());
-            }
+    AFN resultAFN = new AFN();
+    State newStart = resultAFN.createState();
+    State newAccept = resultAFN.createState();
+    resultAFN.setStartState(newStart.getId());
+    resultAFN.addAcceptingState(newAccept.getId());
+    // 1. Camino vacío
+    resultAFN.addEpsilonTransition(newStart.getId(), newAccept.getId());
+    // 2. Mapeo de estados originales
+    Map<Integer, Integer> stateMap = new HashMap<>();
+    for (State state : afn.getStates().values()) {
+        int newStateId = resultAFN.createState().getId();
+        stateMap.put(state.getId(), newStateId);
+        
+        if (state.getId() == afn.getStartState()) {
+            // Conectar nuevo inicio al inicio original
+            resultAFN.addEpsilonTransition(newStart.getId(), newStateId);
         }
-
-        for (State state : afn.getStates().values()) {
-            int fromStateId = stateMap.get(state.getId());
-            for (Map.Entry<Character, Set<Integer>> entry : state.getTransitions().entrySet()) {
-                char symbol = entry.getKey();
-                for (int toStateId : entry.getValue()) {
-                    resultAFN.addTransition(fromStateId, symbol, stateMap.get(toStateId));
-                }
-            }
-            for (int toStateId : state.getEpsilonTransitions()) {
-                resultAFN.addEpsilonTransition(fromStateId, stateMap.get(toStateId));
-            }
+        if (afn.getAcceptingStates().contains(state.getId())) {
+            // Conectar estados de aceptación originales al nuevo acept
+            resultAFN.addEpsilonTransition(newStateId, newAccept.getId());
         }
-
-        // Transición directa para caso de "cero ocurrencias"
-        resultAFN.addEpsilonTransition(startState.getId(), acceptState.getId());
-
-        // Copiar tipo de token desde el primer estado de aceptación original (si tiene)
-        for (int oldAcceptStateId : afn.getAcceptingStates()) {
-            String tokenType = afn.getState(oldAcceptStateId).getTokenType();
-            if (tokenType != null) {
-                acceptState.setTokenType(tokenType);
-                break; // solo necesitamos copiar uno
-            }
-        }
-
-        return resultAFN;
     }
+
+    // 4. Copiar todas las transiciones del AFN original
+    for (State state : afn.getStates().values()) {
+        int from = stateMap.get(state.getId());
+        
+        // Transiciones de símbolos
+        for (Map.Entry<Character, Set<Integer>> entry : state.getTransitions().entrySet()) {
+            for (int to : entry.getValue()) {
+                resultAFN.addTransition(from, entry.getKey(), stateMap.get(to));
+            }
+        }
+        
+        // Transiciones épsilon
+        for (int to : state.getEpsilonTransitions()) {
+            resultAFN.addEpsilonTransition(from, stateMap.get(to));
+        }
+    }
+
+    // 5. Manejo de tokens (sin forzar "NUMEROS")
+    if (!afn.getAcceptingStates().isEmpty()) {
+        String originalToken = afn.getState(afn.getAcceptingStates().iterator().next()).getTokenType();
+        newAccept.setTokenType(originalToken);
+    }
+
+    return resultAFN;
+}
 
 
     public static AFN ERtoAFN(String regex, String tokenType) {
-        Stack<AFN> operandStack = new Stack<>();
-        Stack<Character> operatorStack = new Stack<>();
-
-        // Función auxiliar para aplicar un operador binario
-        Runnable applyBinaryOperator = () -> {
-            if (operatorStack.isEmpty() || operandStack.size() < 2) {
-                return; // Evitar errores si las pilas no tienen suficientes elementos
-            }
-            char operator = operatorStack.pop();
-            AFN operand2 = operandStack.pop();
-            AFN operand1 = operandStack.pop();
-            switch (operator) {
-                case '.': // Concatenación
-                    operandStack.push(constructForConcatenation(operand1, operand2));
-                    break;
-                case '|': // Unión
-                    operandStack.push(constructForUnion(operand1, operand2));
-                    break;
-            }
-        };
-
-        // Precedencia de operadores: | (menor), . (medio), *, +, ? (mayor)
-        Map<Character, Integer> precedence = new HashMap<>();
-        precedence.put('|', 1);
-        precedence.put('.', 2);
-        precedence.put('*', 3);
-        precedence.put('+', 3);
-        precedence.put('?', 3);
-
-        // Insertar operador de concatenación explícito donde sea necesario
-        StringBuilder modifiedRegex = new StringBuilder();
-        for (int i = 0; i < regex.length(); i++) {
-            char currentChar = regex.charAt(i);
-            modifiedRegex.append(currentChar);
-            if (i + 1 < regex.length()) {
-                char nextChar = regex.charAt(i + 1);
-                if ((Character.isLetterOrDigit(currentChar) || currentChar == ')' || currentChar == '*' || currentChar == '+' || currentChar == '?') &&
-                        (Character.isLetterOrDigit(nextChar) || nextChar == '(')) {
-                    modifiedRegex.append('.'); // Insertar concatenación explícita
-                }
-            }
+    Stack<AFN> operandStack = new Stack<>();
+    Stack<Character> operatorStack = new Stack<>();
+    
+    // Función auxiliar para aplicar un operador binario
+    Runnable applyBinaryOperator = () -> {
+        if (operatorStack.isEmpty() || operandStack.size() < 2) return;
+        char operator = operatorStack.pop();
+        AFN operand2 = operandStack.pop();
+        AFN operand1 = operandStack.pop();
+        switch (operator) {
+            case '.': operandStack.push(constructForConcatenation(operand1, operand2)); break;
+            case '|': operandStack.push(constructForUnion(operand1, operand2)); break;
         }
-        regex = modifiedRegex.toString();
+    };
 
-        for (char token : regex.toCharArray()) {
-            switch (token) {
-                case '(':
-                    operatorStack.push(token);
-                    break;
-                case ')':
-                    while (!operatorStack.isEmpty() && operatorStack.peek() != '(') {
-                        applyBinaryOperator.run();
-                    }
-                    if (!operatorStack.isEmpty() && operatorStack.peek() == '(') {
-                        operatorStack.pop(); // Pop el '('
-                    }
-                    break;
-                case '*':
-                case '+':
-                case '?':
-                    if (!operandStack.isEmpty()) {
-                        AFN operand = operandStack.pop();
-                        if (token == '*') {
-                            operandStack.push(constructForKleeneStar(operand));
-                        } else if (token == '+') {
-                            operandStack.push(constructForPositiveClosure(operand));
-                        } else if (token == '?') {
-                            operandStack.push(constructForOptional(operand));
-                        }
-                    }
-                    break;
-                case '|':
-                case '.':
-                    while (!operatorStack.isEmpty() && operatorStack.peek() != '(' &&
-                            precedence.getOrDefault(operatorStack.peek(), 0) >= precedence.getOrDefault(token, 0)) {
-                        applyBinaryOperator.run();
-                    }
-                    operatorStack.push(token);
-                    break;
-                default: // Símbolo del alfabeto
-                    AFN symbolAFN = new AFN();
-                    constructForSymbol(symbolAFN, token, tokenType);
-                    operandStack.push(symbolAFN);
-                    break;
+    // Precedencia de operadores
+    Map<Character, Integer> precedence = new HashMap<>();
+    precedence.put('|', 1);
+    precedence.put('.', 2);
+    precedence.put('*', 3);
+    precedence.put('+', 3);
+    precedence.put('?', 3);
+
+    // Procesamiento de rangos [a-z] y [0-9]
+    StringBuilder modifiedRegex = new StringBuilder();
+    boolean inRange = false;
+    char rangeStart = 0;
+    boolean rangeFirstChar = false;
+    
+    for (int i = 0; i < regex.length(); i++) {
+        char currentChar = regex.charAt(i);
+        
+        if (currentChar == '[' && !inRange) {
+            inRange = true;
+            rangeFirstChar = true;
+            continue;
+        } else if (currentChar == ']' && inRange) {
+            inRange = false;
+            // Reemplazar el rango con un carácter especial temporal
+            modifiedRegex.append('Ω'); // Usamos Ω como marcador de posición
+            continue;
+        }
+        
+        if (inRange) {
+            if (currentChar == '-' && !rangeFirstChar) {
+                // Es un rango como a-z
+                i++;
+                char endChar = regex.charAt(i);
+                AFN rangeAFN = constructForRange(rangeStart, endChar, tokenType);
+                operandStack.push(rangeAFN);
+                rangeFirstChar = false;
+            } else {
+                rangeStart = currentChar;
+                rangeFirstChar = false;
             }
+            continue;
         }
-
-        while (!operatorStack.isEmpty()) {
-            applyBinaryOperator.run();
-        }
-
-        if (operandStack.size() == 1) {
-            return operandStack.pop();
-        } else {
-            return new AFN(); // En caso de error en la expresión regular
+        
+        modifiedRegex.append(currentChar);
+        
+        // Insertar operador de concatenación implícito
+        if (i + 1 < regex.length()) {
+            char nextChar = regex.charAt(i + 1);
+            if ((Character.isLetterOrDigit(currentChar) || currentChar == ')' || 
+                 currentChar == '*' || currentChar == '+' || currentChar == '?') &&
+                (Character.isLetterOrDigit(nextChar) || nextChar == '(')) {
+                modifiedRegex.append('.');
+            }
         }
     }
+    
+    regex = modifiedRegex.toString();
+    
+    // Procesar la expresión regular modificada
+    for (int i = 0; i < regex.length(); i++) {
+        char token = regex.charAt(i);
+        
+        switch (token) {
+            case 'Ω': // Nuestro marcador de posición para rangos
+                // Ya pusimos el AFN del rango en la pila durante el preprocesamiento
+                break;
+            case '(':
+                operatorStack.push(token);
+                break;
+            case ')':
+                while (!operatorStack.isEmpty() && operatorStack.peek() != '(') {
+                    applyBinaryOperator.run();
+                }
+                if (!operatorStack.isEmpty() && operatorStack.peek() == '(') {
+                    operatorStack.pop();
+                }
+                break;
+            case '*':
+            case '+':
+            case '?':
+                if (!operandStack.isEmpty()) {
+                    AFN operand = operandStack.pop();
+                    switch (token) {
+                        case '*': operandStack.push(constructForKleeneStar(operand)); break;
+                        case '+': operandStack.push(constructForPositiveClosure(operand)); break;
+                        case '?': operandStack.push(constructForOptional(operand)); break;
+                    }
+                }
+                break;
+            case '|':
+            case '.':
+                while (!operatorStack.isEmpty() && operatorStack.peek() != '(' &&
+                      precedence.getOrDefault(operatorStack.peek(), 0) >= precedence.getOrDefault(token, 0)) {
+                    applyBinaryOperator.run();
+                }
+                operatorStack.push(token);
+                break;
+            default:
+                AFN symbolAFN = new AFN();
+                constructForSymbol(symbolAFN, token, tokenType);
+                operandStack.push(symbolAFN);
+                break;
+        }
+    }
+
+    while (!operatorStack.isEmpty()) {
+        applyBinaryOperator.run();
+    }
+
+    return operandStack.size() == 1 ? operandStack.pop() : new AFN();
+}
 
     private static <K, V> K getKeyByValue(Map<K, V> map, V value) {
         for (Map.Entry<K, V> entry : map.entrySet()) {
@@ -409,5 +493,26 @@ public class ThompsonAlgorithm {
             }
         }
         return null;
+    }
+    
+    private static AFN constructForRange(char start, char end, String tokenType) {
+        AFN resultAFN = new AFN();
+        //AFN dotAFN = constructForRange('\u0000', '\uFFFF', null);  // Rango Unicode completo 
+        State startState = resultAFN.createState();
+        State acceptState = resultAFN.createState();
+    
+        resultAFN.setStartState(startState.getId());
+        resultAFN.addAcceptingState(acceptState.getId());
+        
+        // Añadir transiciones para cada carácter en el rango
+        for (char c = start; c <= end; c++) {
+            resultAFN.addTransition(startState.getId(), c, acceptState.getId());
+        }
+        
+        if (tokenType != null) {
+            resultAFN.getState(acceptState.getId()).setTokenType(tokenType);
+        }
+    
+        return resultAFN;
     }
 }
