@@ -153,7 +153,7 @@ public class AFD implements Serializable {
             }
         }
 
-        // Procesar el último lexema si se alcanzó un estado de aceptación
+        // Procesar el último lexema si se alcanzó un estado de aceptación ...
         if (lastAcceptingState != -1 && currentLexeme.length() > 0) {
             String tokenValue = input.substring(tokenStartColumn - 1, input.length());
             String tokenType = getTokenType(lastAcceptingState);
