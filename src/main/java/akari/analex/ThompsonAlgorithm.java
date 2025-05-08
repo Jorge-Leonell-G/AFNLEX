@@ -190,60 +190,45 @@ public class ThompsonAlgorithm {
 
    static AFN constructForKleeneStar(AFN afn) {
     AFN resultAFN = new AFN();
-    State startState = resultAFN.createState();
-    State acceptState = resultAFN.createState();
-    resultAFN.setStartState(startState.getId());
-    resultAFN.addAcceptingState(acceptState.getId());
-
-    // Asignar el tokenType del primer estado de aceptación del AFN original
-    for (int acceptId : afn.getAcceptingStates()) {
-        State original = afn.getState(acceptId);
-        if (original.getTokenType() != null) {
-            resultAFN.getState(acceptState.getId()).setTokenType(original.getTokenType());
-            break;
-        }
-    }
-
+    
+    // 1. Nuevo estado inicial (que también es de aceptación)
+    State newStart = resultAFN.createState();
+    resultAFN.setStartState(newStart.getId());
+    resultAFN.addAcceptingState(newStart.getId());
+    
+    // 2. Mapear estados originales
     Map<Integer, Integer> stateMap = new HashMap<>();
     for (State state : afn.getStates().values()) {
-        int newStateId = resultAFN.createState().getId();
-        stateMap.put(state.getId(), newStateId);
-
-        // Conectar el nuevo estado de inicio con el antiguo
-        if (afn.getStartState() == state.getId()) {
-            resultAFN.addEpsilonTransition(startState.getId(), newStateId);
-        }
-
-        // Conectar antiguos estados de aceptación al nuevo de aceptación y a inicio
-        if (afn.getAcceptingStates().contains(state.getId())) {
-            resultAFN.addEpsilonTransition(newStateId, acceptState.getId());
-            resultAFN.addEpsilonTransition(newStateId, stateMap.get(afn.getStartState()));
-        }
+        stateMap.put(state.getId(), resultAFN.createState().getId());
     }
-
-    // Copiar transiciones
+    
+    // 3. Conexión al AFN original
+    resultAFN.addEpsilonTransition(newStart.getId(), stateMap.get(afn.getStartState()));
+    
+    // 4. Conexión de retorno
+    for (int oldAccept : afn.getAcceptingStates()) {
+        resultAFN.addEpsilonTransition(stateMap.get(oldAccept), newStart.getId());
+    }
+    
+    // 5. Copiar transiciones originales
     for (State state : afn.getStates().values()) {
-        int fromStateId = stateMap.get(state.getId());
+        int newFrom = stateMap.get(state.getId());
         for (Map.Entry<Character, Set<Integer>> entry : state.getTransitions().entrySet()) {
-            char symbol = entry.getKey();
-            for (int toStateId : entry.getValue()) {
-                resultAFN.addTransition(fromStateId, symbol, stateMap.get(toStateId));
+            for (int oldTo : entry.getValue()) {
+                resultAFN.addTransition(newFrom, entry.getKey(), stateMap.get(oldTo));
             }
         }
-        for (int toStateId : state.getEpsilonTransitions()) {
-            resultAFN.addEpsilonTransition(fromStateId, stateMap.get(toStateId));
+        for (int oldTo : state.getEpsilonTransitions()) {
+            resultAFN.addEpsilonTransition(newFrom, stateMap.get(oldTo));
         }
     }
-
-    // Conectar directamente el nuevo inicio con el nuevo final (para la cadena vacía)
-    resultAFN.addEpsilonTransition(startState.getId(), acceptState.getId());
-
-    // Debug opcional
-    System.out.println("--- Debug: Tokens en estados de aceptación (Kleene Star) ---");
-    for (int id : resultAFN.getAcceptingStates()) {
-        System.out.println("Estado " + id + " => Token: " + resultAFN.getState(id).getTokenType());
+    
+    // 6. Manejo de tokens
+    if (!afn.getAcceptingStates().isEmpty()) {
+        String tokenType = afn.getState(afn.getAcceptingStates().iterator().next()).getTokenType();
+        resultAFN.getState(newStart.getId()).setTokenType(tokenType);
     }
-
+    
     return resultAFN;
 }
 /*
@@ -306,6 +291,7 @@ public class ThompsonAlgorithm {
 
     return resultAFN;
 }
+   /*
 
     static AFN constructForOptional(AFN afn) {
     AFN resultAFN = new AFN();
@@ -356,6 +342,56 @@ public class ThompsonAlgorithm {
 
     return resultAFN;
 }
+    */
+    
+    static AFN constructForOptional(AFN afn) {
+        AFN resultAFN = new AFN();
+        State startState = resultAFN.createState();
+        State acceptState = resultAFN.createState();
+
+        resultAFN.setStartState(startState.getId());
+        resultAFN.addAcceptingState(acceptState.getId());
+
+        Map<Integer, Integer> stateMap = new HashMap<>();
+        for (State state : afn.getStates().values()) {
+            stateMap.put(state.getId(), resultAFN.createState().getId());
+
+            if (afn.getStartState() == state.getId()) {
+                resultAFN.addEpsilonTransition(startState.getId(), stateMap.get(state.getId()));
+            }
+            if (afn.getAcceptingStates().contains(state.getId())) {
+                int mappedAcceptStateId = stateMap.get(state.getId());
+                resultAFN.addEpsilonTransition(mappedAcceptStateId, acceptState.getId());
+            }
+        }
+
+        for (State state : afn.getStates().values()) {
+            int fromStateId = stateMap.get(state.getId());
+            for (Map.Entry<Character, Set<Integer>> entry : state.getTransitions().entrySet()) {
+                char symbol = entry.getKey();
+                for (int toStateId : entry.getValue()) {
+                    resultAFN.addTransition(fromStateId, symbol, stateMap.get(toStateId));
+                }
+            }
+            for (int toStateId : state.getEpsilonTransitions()) {
+                resultAFN.addEpsilonTransition(fromStateId, stateMap.get(toStateId));
+            }
+        }
+
+        // Transición directa para caso de "cero ocurrencias"
+        resultAFN.addEpsilonTransition(startState.getId(), acceptState.getId());
+
+        // Copiar tipo de token desde el primer estado de aceptación original (si tiene)
+        for (int oldAcceptStateId : afn.getAcceptingStates()) {
+            String tokenType = afn.getState(oldAcceptStateId).getTokenType();
+            if (tokenType != null) {
+                acceptState.setTokenType(tokenType);
+                break; // solo necesitamos copiar uno
+            }
+        }
+
+        return resultAFN;
+    }
 
 
     public static AFN ERtoAFN(String regex, String tokenType) {

@@ -366,7 +366,7 @@ public class AnalizadorLexicoGUI extends JFrame implements ActionListener {
                 char currentChar = input.charAt(position);
                 int nextState = afd.getNextState(currentState, currentChar);
                 
-                // Crear variables locales efectivamente finales
+                // Crear variables locales efectivamente finales (para evitar error en la funcion lambda)
                 final char charToPrint = currentChar;
                 final int stateToPrint = currentState;
 
@@ -453,12 +453,10 @@ public class AnalizadorLexicoGUI extends JFrame implements ActionListener {
             currentState = nextState != -1 ? nextState : afd.getStartState();
         }
         
-        // Añadir todos los elementos al panel
         for (JPanel panel : elementosAnimacion) {
             cintaPanel.add(panel);
         }
         
-        // Configurar la animación
         currentAnimationIndex = 0;
         animationTimer = new Timer(500, e -> {
             if (currentAnimationIndex > 0) {
